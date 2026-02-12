@@ -1,0 +1,8 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="800" rx="64" fill="#FFF5EC"/>
+  <circle cx="260" cy="220" r="140" fill="#F7D7C4"/>
+  <circle cx="940" cy="240" r="160" fill="#DCEFE6"/>
+  <circle cx="820" cy="620" r="180" fill="#E3EFFB"/>
+  <rect x="260" y="420" width="680" height="220" rx="48" fill="#FFE6D6"/>
+  <text x="320" y="540" font-family="Arial, sans-serif" font-size="48" fill="#B05528">Playful moments, everyday essentials</text>
+</svg>

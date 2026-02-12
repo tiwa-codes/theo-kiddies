@@ -1,0 +1,7 @@
+<svg width="640" height="640" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="640" height="640" rx="48" fill="#FFF5EC"/>
+  <circle cx="220" cy="220" r="110" fill="#F2C9AD"/>
+  <circle cx="430" cy="360" r="140" fill="#DCEFE6"/>
+  <rect x="160" y="420" width="320" height="120" rx="36" fill="#FFE3D1"/>
+  <text x="190" y="500" font-family="Arial, sans-serif" font-size="28" fill="#B05528">Theo Kiddies</text>
+</svg>

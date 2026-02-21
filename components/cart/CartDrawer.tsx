@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Drawer } from "@/components/ui/Drawer";
 import { Button } from "@/components/ui/Button";
 import { QuantitySelector } from "@/components/ui/QuantitySelector";
-import { cartItems } from "@/lib/data";
+import { useCartStore } from "@/store/cart";
 
 const FREE_DELIVERY_THRESHOLD = 75;
 
@@ -16,7 +16,9 @@ type CartDrawerProps = {
 };
 
 export function CartDrawer({ open, onClose }: CartDrawerProps) {
-  const [items, setItems] = useState(cartItems);
+  const items = useCartStore((s) => s.items);
+  const removeItem = useCartStore((s) => s.removeItem);
+  const updateQuantity = useCartStore((s) => s.updateQuantity);
 
   const subtotal = useMemo(
     () => items.reduce((total, item) => total + item.price * item.quantity, 0),
@@ -33,7 +35,9 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
               Your Cart
             </p>
-            <h3 className="text-lg font-semibold text-brand-cocoa">{items.length} items</h3>
+            <h3 className="text-lg font-semibold text-brand-cocoa">
+              {items.length} {items.length === 1 ? "item" : "items"}
+            </h3>
           </div>
           <button
             type="button"
@@ -72,20 +76,14 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
                   <button
                     type="button"
                     className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange"
-                    onClick={() => setItems((prev) => prev.filter((entry) => entry.id !== item.id))}
+                    onClick={() => removeItem(item.id)}
                   >
                     Remove
                   </button>
                 </div>
                 <QuantitySelector
                   value={item.quantity}
-                  onChange={(value) =>
-                    setItems((prev) =>
-                      prev.map((entry) =>
-                        entry.id === item.id ? { ...entry, quantity: value } : entry
-                      )
-                    )
-                  }
+                  onChange={(value) => updateQuantity(item.id, value)}
                 />
               </div>
             </div>
@@ -98,15 +96,13 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
             <span>${subtotal.toFixed(2)}</span>
           </div>
           <p className="mt-1 text-xs text-brand-cocoa/60">Taxes and shipping calculated at checkout.</p>
-          <div className="mt-4 space-y-2">
-            <Button className="w-full" size="lg">
-              Checkout
-            </Button>
+          <div className="mt-4">
             <Link
               href="/checkout"
-              className="inline-flex w-full items-center justify-center rounded-full border border-brand-orange/15 bg-white px-6 py-3 text-sm font-semibold text-brand-cocoa transition hover:bg-brand-cream"
+              onClick={onClose}
+              className="inline-flex w-full items-center justify-center rounded-full bg-brand-orange px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-orange/90"
             >
-              Go to checkout
+              Checkout
             </Link>
           </div>
         </div>

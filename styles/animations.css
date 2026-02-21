@@ -1,3 +1,4 @@
+/* ── Shimmer skeleton ─────────────────────────────── */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -7,4 +8,81 @@
   background: linear-gradient(110deg, #ffeadd 8%, #fff7ef 18%, #ffeadd 33%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
+}
+
+/* ── Scroll reveal (driven by FadeIn component) ─────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.55s ease-out, transform 0.55s ease-out;
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Slide-in variant for side elements */
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal-left.is-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ── Cart badge pop ─────────────────────────────────── */
+@keyframes badgePop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.45); }
+  70%  { transform: scale(0.88); }
+  100% { transform: scale(1); }
+}
+
+.badge-pop {
+  animation: badgePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Floating decorative shapes (Hero) ─────────────── */
+@keyframes floatShape {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-10px) scale(1.04); }
+}
+
+@keyframes floatShapeSlow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%       { transform: translateY(-14px) rotate(6deg); }
+  66%       { transform: translateY(-6px) rotate(-4deg); }
+}
+
+.float-shape       { animation: floatShape     4.5s ease-in-out infinite; }
+.float-shape-slow  { animation: floatShapeSlow 7s   ease-in-out infinite; }
+.float-shape-delay { animation: floatShape     5.5s ease-in-out infinite 1.2s; }
+
+/* ── Stagger delay helpers ─────────────────────────── */
+.stagger-1 { --reveal-delay: 60ms;  }
+.stagger-2 { --reveal-delay: 140ms; }
+.stagger-3 { --reveal-delay: 220ms; }
+.stagger-4 { --reveal-delay: 300ms; }
+.stagger-5 { --reveal-delay: 380ms; }
+.stagger-6 { --reveal-delay: 460ms; }
+
+/* ── Reduced-motion: respect user preference ─────── */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-left,
+  .float-shape,
+  .float-shape-slow,
+  .float-shape-delay {
+    animation: none;
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
 }

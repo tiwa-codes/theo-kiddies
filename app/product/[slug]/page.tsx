@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Heart, MessageCircle, ShieldCheck, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import { ProductGallery } from "@/components/shop/ProductGallery";
 import { ProductStructuredData } from "@/components/shop/ProductStructuredData";
 import { ProductCard } from "@/components/shop/ProductCard";
+import { AddToCartButton } from "@/components/shop/AddToCartButton";
 import { Accordion } from "@/components/ui/Accordion";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
-import { QuantityPicker } from "@/components/ui/QuantityPicker";
 import { products } from "@/lib/data";
 
 export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
@@ -59,76 +58,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               {product.badge && <Badge>{product.badge}</Badge>}
             </div>
 
-            <div className="rounded-2xl bg-white p-5 shadow-soft">
-              <div className="space-y-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
-                    Color
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {product.colors.map((color) => (
-                      <button
-                        key={color.id}
-                        type="button"
-                        className="rounded-full border border-brand-orange/15 px-4 py-2 text-sm font-semibold"
-                      >
-                        {color.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
-                    Size
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {product.sizes.map((size) => (
-                      <button
-                        key={size.id}
-                        type="button"
-                        className="rounded-full border border-brand-orange/15 px-4 py-2 text-sm font-semibold"
-                      >
-                        {size.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-brand-cocoa/70">
-                  <ShieldCheck className="h-4 w-4 text-brand-orange" />
-                  {product.inStock ? "In stock" : "Out of stock"}
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
-                    Quantity
-                  </p>
-                  <div className="mt-3">
-                    <QuantityPicker />
-                  </div>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Button size="lg">Add to cart</Button>
-                  <Button size="lg" variant="secondary">
-                    Buy now
-                  </Button>
-                </div>
-                <Link
-                  href="https://wa.me/15551234567"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-brand-cocoa transition hover:bg-brand-cream"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  WhatsApp inquiry
-                </Link>
-                <button
-                  type="button"
-                  className="flex items-center justify-center gap-2 rounded-full border border-brand-orange/15 py-2 text-sm font-semibold"
-                >
-                  <Heart className="h-4 w-4 text-brand-orange" />
-                  Save to wishlist
-                </button>
-              </div>
-            </div>
+            <AddToCartButton product={product} />
 
             <div className="rounded-2xl bg-white p-5 shadow-soft">
               <p className="text-sm text-brand-cocoa/70">

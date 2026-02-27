@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 
 type DrawerProps = {
@@ -18,7 +19,12 @@ export function Drawer({
   widthClassName = "w-full max-w-md",
   children,
 }: DrawerProps) {
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       className={cn(
         "fixed inset-0 z-50 transition",
@@ -47,6 +53,7 @@ export function Drawer({
       >
         {children}
       </aside>
-    </div>
+    </div>,
+    document.body
   );
 }

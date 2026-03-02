@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fredoka, Nunito } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
@@ -39,7 +40,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
+  const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+  const body = (
     <html lang="en" className={`${displayFont.variable} ${bodyFont.variable}`}>
       <body>
         {/* Global layout wrappers */}
@@ -51,4 +54,10 @@ export default function RootLayout({
       </body>
     </html>
   );
+
+  // ClerkProvider is only mounted when the publishable key is present.
+  // On Vercel, set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY in environment variables.
+  if (!clerkKey) return body;
+
+  return <ClerkProvider publishableKey={clerkKey}>{body}</ClerkProvider>;
 }

@@ -1,46 +1,62 @@
 import { TrendingUp, Package, ShoppingBag, Users, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { products, featuredCategories } from "@/lib/data";
+import { supabase } from "@/lib/supabase";
 
-const inStock = products.filter((p) => p.inStock).length;
-const outOfStock = products.filter((p) => !p.inStock).length;
+export const dynamic = "force-dynamic";
 
-const stats = [
-  {
-    label: "Total Products",
-    value: products.length,
-    sub: `${inStock} in stock · ${outOfStock} out`,
-    icon: Package,
-    color: "bg-brand-orange/10 text-brand-orange",
-    href: "/admin/products",
-  },
-  {
-    label: "Categories",
-    value: featuredCategories.length,
-    sub: "Active categories",
-    icon: TrendingUp,
-    color: "bg-purple-100 text-purple-600",
-    href: "/admin/products",
-  },
-  {
-    label: "Orders",
-    value: "–",
-    sub: "Connect backend to track",
-    icon: ShoppingBag,
-    color: "bg-blue-100 text-blue-600",
-    href: "/admin/orders",
-  },
-  {
-    label: "Customers",
-    value: "–",
-    sub: "Connect auth to track",
-    icon: Users,
-    color: "bg-green-100 text-green-600",
-    href: "/admin/customers",
-  },
-];
+export default async function AdminDashboard() {
+  const inStock = products.filter((p) => p.inStock).length;
+  const outOfStock = products.filter((p) => !p.inStock).length;
 
-export default function AdminDashboard() {
+  // Fetch live counts from Supabase (gracefully falls back to 0 if not configured yet)
+  let orderCount = 0;
+  let customerCount = 0;
+  try {
+    const [ordersRes, customersRes] = await Promise.all([
+      supabase.from("orders").select("*", { count: "exact", head: true }),
+      supabase.from("customers").select("*", { count: "exact", head: true }),
+    ]);
+    orderCount = ordersRes.count ?? 0;
+    customerCount = customersRes.count ?? 0;
+  } catch {
+    // Supabase not configured yet — show zeros
+  }
+
+  const stats = [
+    {
+      label: "Total Products",
+      value: products.length,
+      sub: `${inStock} in stock · ${outOfStock} out`,
+      icon: Package,
+      color: "bg-brand-orange/10 text-brand-orange",
+      href: "/admin/products",
+    },
+    {
+      label: "Categories",
+      value: featuredCategories.length,
+      sub: "Active categories",
+      icon: TrendingUp,
+      color: "bg-purple-100 text-purple-600",
+      href: "/admin/products",
+    },
+    {
+      label: "Orders",
+      value: orderCount,
+      sub: "Paid + fulfilled",
+      icon: ShoppingBag,
+      color: "bg-blue-100 text-blue-600",
+      href: "/admin/orders",
+    },
+    {
+      label: "Customers",
+      value: customerCount,
+      sub: "Unique buyers",
+      icon: Users,
+      color: "bg-green-100 text-green-600",
+      href: "/admin/customers",
+    },
+  ];
   return (
     <div className="p-8">
       <div className="mb-8">
@@ -119,10 +135,13 @@ export default function AdminDashboard() {
             { done: true, text: "Paystack payment integration" },
             { done: true, text: "Order confirmation with payment verification" },
             { done: true, text: "Category filtering & sorting via URL params" },
-            { done: false, text: "Add PAYSTACK_SECRET_KEY to .env.local" },
-            { done: false, text: "Replace mock products with a real CMS or database" },
-            { done: false, text: "Add authentication (NextAuth / Clerk / Supabase)" },
-            { done: false, text: "Protect /admin routes with middleware" },
+            { done: true, text: "Supabase database – orders & customers saved automatically" },
+            { done: true, text: "Resend transactional email on every successful order" },
+            { done: true, text: "Clerk auth protecting /admin routes" },
+            { done: false, text: "Add PAYSTACK live keys to Vercel environment variables" },
+            { done: false, text: "Set Paystack webhook URL in Paystack Dashboard" },
+            { done: false, text: "Verify sending domain in Resend Dashboard" },
+            { done: false, text: "Replace mock products with real CMS or database" },
             { done: false, text: "Add real product images to /public/images" },
           ].map(({ done, text }) => (
             <li key={text} className="flex items-center gap-2">

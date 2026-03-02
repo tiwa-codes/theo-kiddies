@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { UserButton } from "@clerk/nextjs";
 import {
   LayoutDashboard,
   Package,
@@ -71,6 +72,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Footer */}
         <div className="border-t border-gray-200 p-3">
+          {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && (
+            <div className="mb-2 flex items-center gap-2 rounded-xl px-3 py-2">
+              <UserButton afterSignOutUrl="/" />
+              <span className="text-xs font-medium text-gray-500">Admin account</span>
+            </div>
+          )}
           <Link
             href="/"
             target="_blank"
@@ -79,9 +86,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <ExternalLink className="h-3.5 w-3.5" />
             View storefront
           </Link>
-          <div className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-[11px] text-amber-700">
-            <strong>Note:</strong> Add route protection (NextAuth / middleware) before going live.
-          </div>
         </div>
       </aside>
 

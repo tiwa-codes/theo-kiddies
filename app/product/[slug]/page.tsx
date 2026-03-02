@@ -16,7 +16,12 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   if (!product) return { title: "Product" };
   return {
     title: product.title,
-    description: `Shop ${product.title} at Theo Kiddies.`,
+    description: `Buy ${product.title} for ${product.ageGroup} – ${product.category} from Theo Kiddies. Premium kids essentials with nationwide delivery.`,
+    openGraph: {
+      title: `${product.title} | Theo Kiddies`,
+      description: `Buy ${product.title} – ${product.category} for ${product.ageGroup} kids.`,
+      images: product.images[0] ? [{ url: product.images[0] }] : [],
+    },
   };
 }
 
@@ -49,10 +54,10 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-3 text-2xl font-semibold text-brand-cocoa">
-              <span>${product.price.toFixed(2)}</span>
+              <span>₦{product.price.toLocaleString("en-NG", { minimumFractionDigits: 2 })}</span>
               {hasSale && (
                 <span className="text-base text-brand-cocoa/50 line-through">
-                  ${product.compareAtPrice?.toFixed(2)}
+                  ₦{product.compareAtPrice?.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
                 </span>
               )}
               {product.badge && <Badge>{product.badge}</Badge>}

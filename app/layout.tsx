@@ -26,12 +26,24 @@ export const metadata: Metadata = {
   },
   description:
     "Theo Kiddies is a nationwide children's retail store for clothing, shoes, toys, school supplies, baby essentials, and accessories.",
-  metadataBase: new URL("https://theokiddies.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_URL ?? "https://theokiddies.com"),
+  keywords: ["kids clothing Nigeria", "children shoes Nigeria", "baby essentials", "kids toys", "school supplies", "Theo Kiddies"],
   openGraph: {
     title: "Theo Kiddies | Premium Kids Essentials",
-    description:
-      "Warm, trustworthy, and premium essentials for every stage of childhood.",
+    description: "Curated picks for busy parents: cozy clothing, playful toys, and everyday essentials.",
     type: "website",
+    siteName: "Theo Kiddies",
+    locale: "en_NG",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Theo Kiddies | Premium Kids Essentials",
+    description: "Curated picks for busy parents: cozy clothing, playful toys, and everyday essentials.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
   },
 };
 

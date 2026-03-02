@@ -52,8 +52,12 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   const title = categoryMap[params.slug];
   if (!title) return { title: "Category" };
   return {
-    title: `${title} Collection`,
-    description: `Shop ${title.toLowerCase()} from Theo Kiddies.`,
+    title: `${title} for Kids`,
+    description: `Shop the best ${title.toLowerCase()} for children at Theo Kiddies. Premium quality with nationwide delivery across Nigeria.`,
+    openGraph: {
+      title: `${title} for Kids | Theo Kiddies`,
+      description: `Discover premium ${title.toLowerCase()} for kids at Theo Kiddies. Fast nationwide delivery.`,
+    },
   };
 }
 

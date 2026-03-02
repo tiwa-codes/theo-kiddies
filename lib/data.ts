@@ -1,8 +1,6 @@
 import type { Category, Product } from "@/types";
 
-// Placeholder data for UI scaffolding; swap with API calls or CMS later.
-
-export const announcement = "Free nationwide delivery on orders over $75 - 2-day dispatch";
+export const announcement = "Free nationwide delivery on orders over ₦15,000 – 2-day dispatch";
 
 export const navAgeGroups = [
   { label: "0-12 Months", href: "/category/0-12-months" },
@@ -209,19 +207,4 @@ export const instagramImages = Array.from({ length: 6 }).map((_, index) => ({
   src: "/images/product-placeholder.svg",
 }));
 
-export const cartItems = [
-  {
-    id: "tk-001",
-    title: "CloudSoft Hoodie Set",
-    price: 42,
-    quantity: 1,
-    image: "/images/product-placeholder.svg",
-  },
-  {
-    id: "tk-003",
-    title: "Rainbow Block Set",
-    price: 28,
-    quantity: 2,
-    image: "/images/product-placeholder.svg",
-  },
-];
+

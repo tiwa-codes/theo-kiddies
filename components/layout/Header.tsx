@@ -72,14 +72,13 @@ export function Header() {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center">
             <Image
               src="/images/theokiddies1.png"
               alt="Theo Kiddies logo"
-              width={44}
-              height={44}
+              width={52}
+              height={52}
             />
-            <span className="text-lg font-bold text-brand-cocoa">Theo Kiddies</span>
           </Link>
         </div>
 

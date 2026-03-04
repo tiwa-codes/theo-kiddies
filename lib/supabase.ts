@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { Product } from "@/types";
 
 export type OrderItem = {
   display_name: string;
@@ -25,6 +26,46 @@ export type Customer = {
   first_seen: string;
   last_seen: string;
 };
+
+// Raw row shape from the `products` Supabase table (snake_case)
+export type DbProduct = {
+  id: string;
+  slug: string;
+  title: string;
+  price: number;
+  compare_at_price: number | null;
+  badge: string | null;
+  age_group: string;
+  category: string;
+  images: string[];
+  colors: { id: string; label: string }[];
+  sizes: { id: string; label: string }[];
+  in_stock: boolean;
+  rating: number;
+  reviews: number;
+  description: string | null;
+  created_at: string;
+};
+
+/** Convert a Supabase row → the Product type used across the storefront */
+export function dbProductToProduct(row: DbProduct): Product {
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    price: row.price,
+    compareAtPrice: row.compare_at_price ?? undefined,
+    badge: row.badge ?? undefined,
+    ageGroup: row.age_group,
+    category: row.category,
+    images: row.images,
+    colors: row.colors,
+    sizes: row.sizes,
+    inStock: row.in_stock,
+    rating: row.rating,
+    reviews: row.reviews,
+  };
+}
 
 // Lazily initialise so the build doesn't fail when env vars aren't present yet.
 let _client: SupabaseClient | null = null;

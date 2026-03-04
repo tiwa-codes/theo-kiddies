@@ -12,7 +12,7 @@ const sections = [
     title: "Store",
     items: [
       { label: "Store Name", value: "Theo Kiddies", hint: "Update in app/layout.tsx metadata" },
-      { label: "WhatsApp Number", value: "+1 555 1234567", hint: "Update in components/layout/WhatsAppButton.tsx" },
+      { label: "WhatsApp Number", value: "+234 814 068 8891", hint: "Update in components/layout/WhatsAppButton.tsx" },
       { label: "Announcement", value: "Free nationwide delivery on orders over $75", hint: "Update in lib/data.ts" },
     ],
   },

@@ -4,7 +4,7 @@ import { CategoryToolbar } from "@/components/filters/CategoryToolbar";
 import { FilterSidebar } from "@/components/filters/FilterSidebar";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { Container } from "@/components/ui/Container";
-import { products } from "@/lib/data";
+import { getAllProducts } from "@/lib/products";
 
 const categoryMap: Record<string, string> = {
   "0-12-months": "0-12 Months",
@@ -61,7 +61,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   };
 }
 
-export default function CategoryPage({
+export default async function CategoryPage({
   params,
   searchParams,
 }: {
@@ -70,6 +70,8 @@ export default function CategoryPage({
 }) {
   const title = categoryMap[params.slug];
   if (!title) return notFound();
+
+  const products = await getAllProducts();
 
   // --- Base filter by slug ---
   let filtered = [...products];
@@ -114,10 +116,10 @@ export default function CategoryPage({
     const ranges = searchParams.price.split(",");
     filtered = filtered.filter((p) =>
       ranges.some((range) => {
-        if (range === "$0-$25") return p.price <= 25;
-        if (range === "$25-$50") return p.price > 25 && p.price <= 50;
-        if (range === "$50-$100") return p.price > 50 && p.price <= 100;
-        if (range === "$100+") return p.price > 100;
+        if (range === "₦0-₦5,000") return p.price <= 5000;
+        if (range === "₦5,000-₦15,000") return p.price > 5000 && p.price <= 15000;
+        if (range === "₦15,000-₦30,000") return p.price > 15000 && p.price <= 30000;
+        if (range === "₦30,000+") return p.price > 30000;
         return true;
       })
     );

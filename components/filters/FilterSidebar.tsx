@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/Card";
 const filterSections = [
   { title: "Age", param: "age", options: ["0-12 Months", "1-3 Years", "4-7 Years", "8-12 Years"] },
   { title: "Size", param: "size", options: ["XS", "S", "M", "L", "One Size"] },
-  { title: "Price range", param: "price", options: ["$0-$25", "$25-$50", "$50-$100", "$100+"] },
+  { title: "Price range", param: "price", options: ["₦0-₦5,000", "₦5,000-₦15,000", "₦15,000-₦30,000", "₦30,000+"] },
   { title: "Availability", param: "availability", options: ["In stock", "Pre-order"] },
 ];
 

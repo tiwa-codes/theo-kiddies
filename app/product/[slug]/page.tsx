@@ -9,10 +9,10 @@ import { AddToCartButton } from "@/components/shop/AddToCartButton";
 import { Accordion } from "@/components/ui/Accordion";
 import { Badge } from "@/components/ui/Badge";
 import { Container } from "@/components/ui/Container";
-import { products } from "@/lib/data";
+import { getProductBySlug, getAllProducts } from "@/lib/products";
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const product = products.find((item) => item.slug === params.slug);
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const product = await getProductBySlug(params.slug);
   if (!product) return { title: "Product" };
   return {
     title: product.title,
@@ -25,9 +25,12 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   };
 }
 
-export default function ProductPage({ params }: { params: { slug: string } }) {
-  const product = products.find((item) => item.slug === params.slug);
+export default async function ProductPage({ params }: { params: { slug: string } }) {
+  const product = await getProductBySlug(params.slug);
   if (!product) return notFound();
+
+  const allProducts = await getAllProducts();
+  const related = allProducts.filter((p) => p.id !== product.id).slice(0, 4);
 
   const hasSale = product.compareAtPrice && product.compareAtPrice > product.price;
 
@@ -98,7 +101,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             </Link>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {products.slice(0, 4).map((item) => (
+            {related.map((item) => (
               <ProductCard key={item.id} product={item} />
             ))}
           </div>

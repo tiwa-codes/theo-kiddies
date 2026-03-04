@@ -11,6 +11,7 @@ import { Container } from "@/components/ui/Container";
 import { Drawer } from "@/components/ui/Drawer";
 import { Input } from "@/components/ui/Input";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { CurrencySelector } from "@/components/layout/CurrencySelector";
 import { useCartStore } from "@/store/cart";
 import { cn } from "@/lib/utils";
 
@@ -170,6 +171,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <CurrencySelector />
           <div ref={searchRef} className="relative hidden lg:block">
             <form onSubmit={handleSearchSubmit}>
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-cocoa/50" />

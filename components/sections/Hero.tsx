@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 
 export function Hero() {
@@ -24,10 +23,18 @@ export function Hero() {
             trustworthy experience parents can rely on.
           </p>
           <div className="animate-fade-up flex flex-wrap gap-3 [animation-delay:300ms]">
-            <Button size="lg">Shop Now</Button>
-            <Button size="lg" variant="secondary">
+            <Link
+              href="/category/new-arrivals"
+              className="inline-flex items-center justify-center rounded-full bg-brand-orange px-6 py-3 text-base font-semibold text-white shadow-soft transition hover:-translate-y-0.5 hover:shadow-float"
+            >
+              Shop Now
+            </Link>
+            <Link
+              href="/category/deals"
+              className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-base font-semibold text-brand-cocoa ring-1 ring-brand-orange/15 transition hover:bg-brand-cream"
+            >
               Explore Deals
-            </Button>
+            </Link>
           </div>
           <div className="animate-fade-up flex flex-wrap gap-4 text-sm text-brand-cocoa/70 [animation-delay:400ms]">
             <span className="rounded-full bg-white px-4 py-2 shadow-soft">30-day easy returns</span>

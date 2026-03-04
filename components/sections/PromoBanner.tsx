@@ -21,8 +21,13 @@ export function PromoBanner() {
               </p>
             </div>
             <div className="flex flex-col items-start justify-center gap-3 sm:flex-row sm:items-center">
-              <Button className="bg-white text-brand-orange hover:bg-brand-cream">Shop the sale</Button>
-              <Link href="/category/deals" className="text-sm font-semibold underline">
+              <Link
+                href="/category/deals"
+                className="inline-flex items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-brand-orange transition hover:bg-brand-cream"
+              >
+                Shop the sale
+              </Link>
+              <Link href="/category/deals" className="text-sm font-semibold underline text-white">
                 Explore deals
               </Link>
             </div>

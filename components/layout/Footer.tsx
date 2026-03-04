@@ -13,17 +13,17 @@ const quickLinks = [
 ];
 
 const customerService = [
-  { label: "Order Tracking", href: "/" },
-  { label: "Returns & Exchanges", href: "/" },
-  { label: "FAQs", href: "/" },
-  { label: "Size Guide", href: "/" },
+  { label: "Order Tracking", href: "/account" },
+  { label: "Returns & Exchanges", href: "/returns" },
+  { label: "FAQs", href: "/faq" },
+  { label: "Size Guide", href: "/size-guide" },
 ];
 
 const deliveryPolicy = [
-  { label: "Delivery Areas", href: "/" },
-  { label: "Shipping Times", href: "/" },
-  { label: "Pickup Locations", href: "/" },
-  { label: "International", href: "/" },
+  { label: "Delivery Areas", href: "/shipping" },
+  { label: "Shipping Times", href: "/shipping" },
+  { label: "Pickup Locations", href: "/shipping#pickup" },
+  { label: "International", href: "/shipping#international" },
 ];
 
 export function Footer() {
@@ -116,9 +116,9 @@ export function Footer() {
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-brand-orange/10 pt-6 text-xs text-brand-cocoa/60">
           <p>© {new Date().getFullYear()} Theo Kiddies. All rights reserved.</p>
           <div className="flex gap-4">
-            <Link href="/">Privacy Policy</Link>
-            <Link href="/">Terms</Link>
-            <Link href="/">Contact</Link>
+            <Link href="/privacy">Privacy Policy</Link>
+            <Link href="/terms">Terms</Link>
+            <Link href="/faq">Contact</Link>
           </div>
         </div>
       </Container>

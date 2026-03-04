@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
+import { useCurrencyStore } from "@/store/currency";
+import { formatPrice } from "@/lib/currency";
 
 export function ProductCard({ product }: { product: Product }) {
   const hasSale = product.compareAtPrice && product.compareAtPrice > product.price;
@@ -18,6 +20,7 @@ export function ProductCard({ product }: { product: Product }) {
   const { toggle, has } = useWishlistStore();
   const isSaved = has(product.id);
   const [justAdded, setJustAdded] = useState(false);
+  const { currency } = useCurrencyStore();
 
   function handleQuickAdd() {
     addItem({
@@ -72,10 +75,10 @@ export function ProductCard({ product }: { product: Product }) {
           </h3>
         </div>
         <div className="flex items-center gap-2 text-sm font-semibold">
-          <span>₦{product.price.toFixed(2)}</span>
+          <span>{formatPrice(product.price, currency)}</span>
           {hasSale && (
             <span className="text-xs text-brand-cocoa/50 line-through">
-              ₦{product.compareAtPrice?.toFixed(2)}
+              {formatPrice(product.compareAtPrice!, currency)}
             </span>
           )}
         </div>

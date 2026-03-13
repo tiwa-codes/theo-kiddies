@@ -13,10 +13,10 @@ export default async function AccountSettingsPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-brand-cream py-12">
+      <div className="min-h-screen bg-brand-cream py-8 sm:py-12">
         <Container size="wide" className="space-y-6">
-          <h1 className="text-3xl font-bold text-brand-cocoa">Account Settings</h1>
-          <Card className="p-6">
+          <h1 className="text-2xl font-bold text-brand-cocoa sm:text-3xl">Account Settings</h1>
+          <Card className="p-4 sm:p-6">
             <p className="font-semibold text-brand-cocoa">Sign in to manage your settings</p>
             <p className="mt-1 text-sm text-brand-cocoa/70">Update your profile after signing in.</p>
             <div className="mt-4">
@@ -31,14 +31,14 @@ export default async function AccountSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-brand-cream py-12">
+    <div className="min-h-screen bg-brand-cream py-8 sm:py-12">
       <Container size="wide" className="space-y-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">My Account</p>
-          <h1 className="mt-2 text-3xl font-bold text-brand-cocoa">Account Settings</h1>
+          <h1 className="mt-2 text-2xl font-bold text-brand-cocoa sm:text-3xl">Account Settings</h1>
         </div>
 
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-brand-cocoa">Profile</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>

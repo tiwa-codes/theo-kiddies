@@ -58,8 +58,8 @@ export default async function AdminDashboard() {
     },
   ];
   return (
-    <div className="p-8">
-      <div className="mb-8">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="mt-1 text-sm text-gray-500">
           Welcome back. Here&apos;s an overview of your store.
@@ -89,7 +89,7 @@ export default async function AdminDashboard() {
 
       {/* Recent products */}
       <div className="mt-8 rounded-2xl border border-gray-200 bg-white">
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-4 sm:px-6">
           <h2 className="font-semibold text-gray-900">Recent Products</h2>
           <Link
             href="/admin/products"
@@ -100,7 +100,7 @@ export default async function AdminDashboard() {
         </div>
         <div className="divide-y divide-gray-100">
           {products.slice(0, 5).map((p) => (
-            <div key={p.id} className="flex items-center gap-4 px-6 py-3">
+            <div key={p.id} className="flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap sm:gap-4 sm:px-6">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-cream text-xs font-bold text-brand-orange">
                 {p.title[0]}
               </div>
@@ -108,7 +108,7 @@ export default async function AdminDashboard() {
                 <p className="truncate text-sm font-semibold text-gray-900">{p.title}</p>
                 <p className="text-xs text-gray-400">{p.category} · {p.ageGroup}</p>
               </div>
-              <div className="text-right">
+              <div className="w-full text-left sm:w-auto sm:text-right">
                 <p className="text-sm font-semibold text-gray-900">₦{p.price}</p>
                 <span
                   className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${
@@ -126,7 +126,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Setup checklist */}
-      <div className="mt-8 rounded-2xl border border-dashed border-brand-orange/30 bg-brand-orange/5 p-6">
+      <div className="mt-8 rounded-2xl border border-dashed border-brand-orange/30 bg-brand-orange/5 p-4 sm:p-6">
         <h2 className="font-semibold text-brand-cocoa">🚀 Store Setup Checklist</h2>
         <ul className="mt-3 space-y-2 text-sm text-brand-cocoa/80">
           {[

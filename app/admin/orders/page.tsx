@@ -31,8 +31,8 @@ export default async function AdminOrdersPage() {
     .reduce((t, o) => t + o.amount, 0);
 
   return (
-    <div className="p-8">
-      <div className="mb-6 flex items-start justify-between gap-4">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
           <p className="mt-1 text-sm text-gray-500">
@@ -73,7 +73,8 @@ export default async function AdminOrdersPage() {
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                 <th className="px-5 py-3">Reference</th>
@@ -105,6 +106,7 @@ export default async function AdminOrdersPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

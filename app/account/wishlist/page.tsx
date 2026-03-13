@@ -13,15 +13,15 @@ export default function AccountWishlistPage() {
   const items = staticProducts.filter((p) => ids.includes(p.id));
 
   return (
-    <div className="min-h-screen bg-brand-cream py-12">
+    <div className="min-h-screen bg-brand-cream py-8 sm:py-12">
       <Container size="wide" className="space-y-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">My Account</p>
-          <h1 className="mt-2 text-3xl font-bold text-brand-cocoa">Wishlist</h1>
+          <h1 className="mt-2 text-2xl font-bold text-brand-cocoa sm:text-3xl">Wishlist</h1>
         </div>
 
         {items.length === 0 ? (
-          <Card className="p-10 text-center">
+          <Card className="p-6 text-center sm:p-10">
             <Heart className="mx-auto h-9 w-9 text-brand-orange/50" />
             <p className="mt-3 font-semibold text-brand-cocoa">Your wishlist is empty</p>
             <p className="mt-1 text-sm text-brand-cocoa/70">Tap the heart icon on any product to save it here.</p>

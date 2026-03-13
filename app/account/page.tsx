@@ -20,21 +20,21 @@ export default async function AccountPage() {
   const user = await currentUser();
 
   return (
-    <div className="min-h-screen bg-brand-cream py-12">
-      <Container size="wide" className="space-y-8">
+    <div className="min-h-screen bg-brand-cream py-8 sm:py-12">
+      <Container size="wide" className="space-y-6 sm:space-y-8">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
             My Account
           </p>
-          <h1 className="mt-2 text-3xl font-bold text-brand-cocoa">
+          <h1 className="mt-2 text-2xl font-bold text-brand-cocoa sm:text-3xl">
             {user ? `Welcome back${user.firstName ? `, ${user.firstName}` : ""}!` : "Welcome!"}
           </h1>
         </div>
 
         {user ? (
           /* ── Logged-in state ── */
-          <Card className="p-6">
-            <div className="flex items-center gap-4">
+          <Card className="p-4 sm:p-6">
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
               {user.imageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={user.imageUrl} alt="Profile" className="h-14 w-14 rounded-full object-cover" />
@@ -43,7 +43,7 @@ export default async function AccountPage() {
                 <p className="font-semibold text-brand-cocoa">
                   {user.firstName} {user.lastName}
                 </p>
-                <p className="text-sm text-brand-cocoa/60">
+                <p className="break-all text-sm text-brand-cocoa/60">
                   {user.emailAddresses[0]?.emailAddress}
                 </p>
               </div>
@@ -51,7 +51,7 @@ export default async function AccountPage() {
           </Card>
         ) : (
           /* ── Guest state ── */
-          <Card className="p-6">
+          <Card className="p-4 sm:p-6">
             <p className="font-semibold text-brand-cocoa">Sign in to your account</p>
             <p className="mt-1 text-sm text-brand-cocoa/70">
               Track orders, save favourites, and manage your profile.
@@ -77,9 +77,9 @@ export default async function AccountPage() {
         <div className="grid gap-4 sm:grid-cols-3">
           {quickLinks.map(({ label, description, href, icon: Icon }) => (
             <Link key={label} href={href}>
-              <Card className="group h-full p-6 transition hover:shadow-float">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-brand-orange/10 transition group-hover:bg-brand-orange/20">
-                  <Icon className="h-5 w-5 text-brand-orange" />
+              <Card className="group h-full p-4 transition hover:shadow-float sm:p-6">
+                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-brand-orange/10 transition group-hover:bg-brand-orange/20 sm:h-10 sm:w-10">
+                  <Icon className="h-4 w-4 text-brand-orange sm:h-5 sm:w-5" />
                 </div>
                 <h3 className="font-semibold text-brand-cocoa">{label}</h3>
                 <p className="mt-1 text-sm text-brand-cocoa/60">{description}</p>

@@ -62,8 +62,8 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-brand-orange/10 bg-white/80 backdrop-blur">
-      <Container size="wide" className="flex items-center justify-between gap-6 py-4">
-        <div className="flex items-center gap-3">
+      <Container size="wide" className="flex items-center justify-between gap-3 py-3 sm:gap-6 sm:py-4">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
             className="rounded-full border border-brand-orange/15 p-2 lg:hidden"
@@ -76,8 +76,9 @@ export function Header() {
             <Image
               src="/images/theokiddies1.png"
               alt="Theo Kiddies logo"
-              width={52}
-              height={52}
+              width={64}
+              height={64}
+              className="h-8 w-auto sm:h-10"
             />
           </Link>
         </div>
@@ -169,8 +170,10 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
-          <CurrencySelector />
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden sm:block">
+            <CurrencySelector />
+          </div>
           <div ref={searchRef} className="relative hidden lg:block">
             <form onSubmit={handleSearchSubmit}>
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-cocoa/50" />
@@ -205,10 +208,11 @@ export function Header() {
           </div>
           <button
             type="button"
-            className="rounded-full border border-brand-orange/10 p-2"
+            className="rounded-full border border-brand-orange/10 p-2 lg:hidden"
             aria-label="Open search"
+            onClick={() => router.push("/category/clothing")}
           >
-            <Search className="h-4 w-4 lg:hidden" />
+            <Search className="h-4 w-4" />
           </button>
           <Link
             href="/account"
@@ -245,6 +249,14 @@ export function Header() {
             </button>
           </div>
           <div className="space-y-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
+                Currency
+              </p>
+              <div className="mt-3 max-w-[180px]">
+                <CurrencySelector />
+              </div>
+            </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
                 Shop by Age

@@ -32,10 +32,10 @@ export default async function AccountOrdersPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-brand-cream py-12">
+      <div className="min-h-screen bg-brand-cream py-8 sm:py-12">
         <Container size="wide" className="space-y-6">
-          <h1 className="text-3xl font-bold text-brand-cocoa">My Orders</h1>
-          <Card className="p-6">
+          <h1 className="text-2xl font-bold text-brand-cocoa sm:text-3xl">My Orders</h1>
+          <Card className="p-4 sm:p-6">
             <p className="font-semibold text-brand-cocoa">Sign in to view your orders</p>
             <p className="mt-1 text-sm text-brand-cocoa/70">Use the same email you used at checkout.</p>
             <div className="mt-4">
@@ -53,15 +53,15 @@ export default async function AccountOrdersPage() {
   const orders = await getMyOrders(emails);
 
   return (
-    <div className="min-h-screen bg-brand-cream py-12">
+    <div className="min-h-screen bg-brand-cream py-8 sm:py-12">
       <Container size="wide" className="space-y-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">My Account</p>
-          <h1 className="mt-2 text-3xl font-bold text-brand-cocoa">My Orders</h1>
+          <h1 className="mt-2 text-2xl font-bold text-brand-cocoa sm:text-3xl">My Orders</h1>
         </div>
 
         {orders.length === 0 ? (
-          <Card className="p-10 text-center">
+          <Card className="p-6 text-center sm:p-10">
             <ShoppingBag className="mx-auto h-9 w-9 text-brand-orange/50" />
             <p className="mt-3 font-semibold text-brand-cocoa">No orders yet</p>
             <p className="mt-1 text-sm text-brand-cocoa/70">When you complete checkout, your orders will appear here.</p>
@@ -72,11 +72,11 @@ export default async function AccountOrdersPage() {
         ) : (
           <div className="space-y-4">
             {orders.map((order) => (
-              <Card key={order.id} className="p-5">
+              <Card key={order.id} className="p-4 sm:p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">Reference</p>
-                    <p className="mt-1 font-mono text-sm text-brand-cocoa">{order.reference.toUpperCase()}</p>
+                    <p className="mt-1 break-all font-mono text-xs text-brand-cocoa sm:text-sm">{order.reference.toUpperCase()}</p>
                   </div>
                   <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 capitalize">
                     {order.status}

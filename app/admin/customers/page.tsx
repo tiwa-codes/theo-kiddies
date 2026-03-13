@@ -22,7 +22,7 @@ export default async function AdminCustomersPage() {
   const totalRevenue = customers.reduce((t, c) => t + c.total_spent, 0);
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
       <p className="mt-1 text-sm text-gray-500">
         {customers.length} customer{customers.length !== 1 ? "s" : ""} · ₦{totalRevenue.toLocaleString("en-NG")} lifetime value
@@ -38,7 +38,8 @@ export default async function AdminCustomersPage() {
         </div>
       ) : (
         <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[700px] text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                 <th className="px-5 py-3">Email</th>
@@ -66,6 +67,7 @@ export default async function AdminCustomersPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

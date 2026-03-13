@@ -1,7 +1,6 @@
 "use client";
 
 import { useCurrencyStore, type Currency } from "@/store/currency";
-import { SYMBOLS } from "@/lib/currency";
 
 const OPTIONS: { value: Currency; label: string }[] = [
   { value: "NGN", label: "₦ NGN" },

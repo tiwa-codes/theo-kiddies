@@ -40,7 +40,7 @@ export default function CheckoutPage() {
 
   if (!items.length) {
     return (
-      <div className="min-h-screen bg-brand-cream py-16">
+      <div className="min-h-screen bg-brand-cream py-10 sm:py-16">
         <Container className="max-w-md space-y-6 text-center">
           <ShoppingBag className="mx-auto h-12 w-12 text-brand-orange/40" />
           <h1 className="text-2xl font-bold text-brand-cocoa">Your cart is empty</h1>
@@ -59,18 +59,18 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="bg-brand-cream py-12">
-      <Container size="wide" className="space-y-8">
+    <div className="bg-brand-cream py-8 sm:py-12">
+      <Container size="wide" className="space-y-6 sm:space-y-8">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
             Secure checkout
           </p>
-          <h1 className="mt-2 text-3xl font-bold text-brand-cocoa">Checkout</h1>
+          <h1 className="mt-2 text-2xl font-bold text-brand-cocoa sm:text-3xl">Checkout</h1>
         </div>
 
         <form onSubmit={handleCheckout}>
           <div className="grid gap-6 lg:grid-cols-[1.3fr,0.7fr]">
-            <Card className="p-6">
+            <Card className="p-4 sm:p-6">
               <div className="flex items-center gap-2 text-sm text-brand-cocoa/70">
                 <Lock className="h-4 w-4 text-brand-orange" />
                 All transactions are encrypted and secure.
@@ -138,18 +138,18 @@ export default function CheckoutPage() {
               </div>
             </Card>
 
-            <Card className="h-fit p-6">
+            <Card className="h-fit p-4 sm:p-6">
               <h2 className="text-lg font-semibold">Order summary</h2>
               <div className="mt-4 space-y-4">
                 {items.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between text-sm">
-                    <div>
+                  <div key={item.id} className="flex items-start justify-between gap-3 text-sm">
+                    <div className="min-w-0">
                       <p className="font-semibold text-brand-cocoa">{item.title}</p>
-                      <span>
+                      <span className="text-xs text-brand-cocoa/70">
                     {item.color && `${item.color} · `}{item.size && `${item.size} · `}Qty {item.quantity}
                   </span>
                     </div>
-                    <span>₦{(item.price * item.quantity).toFixed(2)}</span>
+                    <span className="whitespace-nowrap">₦{(item.price * item.quantity).toFixed(2)}</span>
                   </div>
                 ))}
               </div>

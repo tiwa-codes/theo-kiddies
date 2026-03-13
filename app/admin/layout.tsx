@@ -27,11 +27,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 lg:flex">
       {/* Sidebar */}
-      <aside className="flex w-64 flex-shrink-0 flex-col border-r border-gray-200 bg-white">
+      <aside className="border-b border-gray-200 bg-white lg:flex lg:w-64 lg:flex-shrink-0 lg:flex-col lg:border-b-0 lg:border-r">
         {/* Brand */}
-        <div className="flex items-center gap-2.5 border-b border-gray-200 px-5 py-4">
+        <div className="flex items-center gap-2.5 border-b border-gray-200 px-4 py-3 lg:px-5 lg:py-4">
           <Image
             src="/images/theokiddies1.png"
             alt="Theo Kiddies"
@@ -48,7 +48,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 space-y-0.5 p-3">
+        <nav className="overflow-x-auto px-2 py-2 lg:flex-1 lg:space-y-0.5 lg:overflow-visible lg:p-3">
+          <div className="flex min-w-max gap-1.5 lg:block lg:min-w-0 lg:space-y-0.5 lg:gap-0">
           {navItems.map(({ label, href, icon: Icon, exact }) => {
             const active = exact ? pathname === href : pathname.startsWith(href);
             return (
@@ -56,7 +57,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 key={href}
                 href={href}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                  "flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors lg:gap-3 lg:py-2.5",
                   active
                     ? "bg-brand-orange/10 text-brand-orange"
                     : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
@@ -68,10 +69,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </Link>
             );
           })}
+          </div>
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-3">
+        <div className="hidden border-t border-gray-200 p-3 lg:block">
           {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && (
             <div className="mb-2 flex items-center gap-2 rounded-xl px-3 py-2">
               <UserButton afterSignOutUrl="/" />
@@ -90,7 +92,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main */}
-      <main className="flex-1 overflow-auto">{children}</main>
+      <main className="min-w-0 flex-1 overflow-auto">{children}</main>
     </div>
   );
 }

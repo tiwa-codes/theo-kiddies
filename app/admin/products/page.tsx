@@ -267,7 +267,7 @@ export default function AdminProductsPage() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Toast */}
       {toast && (
         <div className={`fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-float ${toast.ok ? "bg-brand-cocoa" : "bg-red-600"}`}>
@@ -276,7 +276,7 @@ export default function AdminProductsPage() {
       )}
 
       {/* Header */}
-      <div className="mb-6 flex items-start justify-between gap-4">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Products</h1>
           <p className="mt-1 text-sm text-gray-500">
@@ -312,7 +312,8 @@ export default function AdminProductsPage() {
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                 <th className="px-5 py-3">Product</th>
@@ -383,12 +384,13 @@ export default function AdminProductsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
       {/* ── Add / Edit Modal ──────────────────────────────────────────────── */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 pt-12">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-3 pt-6 sm:p-4 sm:pt-12">
           <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
             {/* Modal header */}
             <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
@@ -410,7 +412,7 @@ export default function AdminProductsPage() {
                   <input required value={form.title} onChange={(e) => setField("title", e.target.value)} className={inputCls} placeholder="e.g. CloudSoft Hoodie Set" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-sm font-semibold text-gray-700">Slug <span className="text-red-500">*</span></label>
                     <input required value={form.slug} onChange={(e) => setField("slug", e.target.value)} className={inputCls} placeholder="auto-generated" />
@@ -421,7 +423,7 @@ export default function AdminProductsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-sm font-semibold text-gray-700">Age group <span className="text-red-500">*</span></label>
                     <select required value={form.age_group} onChange={(e) => setField("age_group", e.target.value)} className={inputCls}>
@@ -444,7 +446,7 @@ export default function AdminProductsPage() {
 
               <div className="space-y-4 px-6 py-5">
                 <p className="text-xs font-semibold uppercase tracking-widest text-brand-orange/70">Pricing</p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-sm font-semibold text-gray-700">Price (₦) <span className="text-red-500">*</span></label>
                     <input required type="number" min="0" step="0.01" value={form.price} onChange={(e) => setField("price", e.target.value)} className={inputCls} placeholder="e.g. 4200" />
@@ -569,7 +571,7 @@ export default function AdminProductsPage() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-sm font-semibold text-gray-700">Colors <span className="text-gray-400 font-normal">(Label:id, …)</span></label>
                     <input value={form.colors} onChange={(e) => setField("colors", e.target.value)} className={inputCls} placeholder="Warm Coral:coral, Soft Sage:sage" />

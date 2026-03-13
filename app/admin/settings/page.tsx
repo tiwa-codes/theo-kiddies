@@ -118,7 +118,7 @@ export default function AdminSettingsPage() {
   ];
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-6 flex items-center gap-3">
         <Settings className="h-6 w-6 text-brand-orange" />
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
@@ -132,7 +132,7 @@ export default function AdminSettingsPage() {
             </div>
             <div className="divide-y divide-gray-100">
               {items.map(({ label, value, hint, status }) => (
-                <div key={label} className="flex items-start justify-between gap-4 px-6 py-4">
+                <div key={label} className="flex flex-col items-start justify-between gap-3 px-4 py-4 sm:flex-row sm:gap-4 sm:px-6">
                   <div className="flex items-start gap-2">
                     <StatusBadge status={status} />
                     <div>
@@ -140,7 +140,7 @@ export default function AdminSettingsPage() {
                       <p className="mt-0.5 text-xs text-gray-400">{hint}</p>
                     </div>
                   </div>
-                  <code className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-mono text-gray-700 whitespace-nowrap max-w-xs truncate">
+                  <code className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-mono text-gray-700 break-all sm:max-w-xs sm:truncate sm:whitespace-nowrap">
                     {value}
                   </code>
                 </div>

@@ -1,6 +1,7 @@
 import { Settings, CheckCircle2, XCircle } from "lucide-react";
 import { announcement } from "@/lib/data";
 import { siteConfig } from "@/lib/config";
+import { HomepageVisualsSettings } from "@/components/admin/HomepageVisualsSettings";
 
 type SettingItem = {
   label: string;
@@ -148,6 +149,8 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         ))}
+
+        <HomepageVisualsSettings />
       </div>
     </div>
   );

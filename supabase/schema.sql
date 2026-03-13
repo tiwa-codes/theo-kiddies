@@ -68,3 +68,22 @@ alter table products enable row level security;
 create policy "Public can read products"
   on products for select
   using (true);
+
+-- ============================================================
+-- Site content: simple key/value store for editable homepage/admin content
+-- ============================================================
+create table if not exists site_content (
+  key        text primary key,
+  value      text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists site_content_updated_at_idx on site_content (updated_at desc);
+
+alter table site_content enable row level security;
+
+-- Public read is fine for non-sensitive content like hero image URLs/text.
+create policy "Public can read site content"
+  on site_content for select
+  using (true);

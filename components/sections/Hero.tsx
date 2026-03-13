@@ -2,7 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 
-export function Hero() {
+type HeroProps = {
+  imageUrl?: string;
+  imageAlt?: string;
+};
+
+export function Hero({ imageUrl = "/images/hero-kids.svg", imageAlt = "Happy kids with Theo Kiddies essentials" }: HeroProps) {
   return (
     <section className="relative overflow-hidden bg-brand-cream">
       {/* Decorative floating blobs */}
@@ -48,8 +53,8 @@ export function Hero() {
           <div className="absolute -right-6 bottom-10 h-32 w-32 rounded-full bg-accent-sky blur-2xl float-shape-slow" />
           <div className="relative overflow-hidden rounded-2xl bg-white p-4 shadow-float transition-transform duration-500 hover:-translate-y-1 hover:shadow-float">
             <Image
-              src="/images/hero-kids.svg"
-              alt="Happy kids with Theo Kiddies essentials"
+              src={imageUrl}
+              alt={imageAlt}
               width={640}
               height={520}
               className="h-full w-full rounded-2xl object-cover"

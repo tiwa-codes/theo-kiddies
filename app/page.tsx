@@ -6,6 +6,7 @@ import { FeaturedCategories } from "@/components/sections/FeaturedCategories";
 import { BestSellers } from "@/components/sections/BestSellers";
 import { PromoBanner } from "@/components/sections/PromoBanner";
 import { WhyShop } from "@/components/sections/WhyShop";
+import { getHomeHeroContent } from "@/lib/site-content";
 
 const Testimonials = dynamic(() => import("@/components/sections/Testimonials").then((mod) => mod.Testimonials), {
   loading: () => <div className="mx-auto h-40 max-w-6xl rounded-2xl bg-white shimmer" />,
@@ -24,10 +25,12 @@ export const metadata: Metadata = {
     "Shop premium kids essentials across clothing, shoes, toys, and more at Theo Kiddies.",
 };
 
-export default function Home() {
+export default async function Home() {
+  const hero = await getHomeHeroContent();
+
   return (
     <>
-      <Hero />
+      <Hero imageUrl={hero.imageUrl} imageAlt={hero.imageAlt} />
       <ShopByAge />
       <FeaturedCategories />
       <BestSellers />

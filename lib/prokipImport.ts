@@ -55,9 +55,9 @@ export function parseProkipProductsCsv(raw: string): ParsedImportRow[] {
     .map((line) => line.trim())
     .filter(Boolean);
 
-  const headerIndex = lines.findIndex((line) => line.includes("Product/Service") && line.includes("Selling Price"));
+  const headerIndex = lines.findIndex((line) => line === "Product/Service,Selling Price");
   if (headerIndex === -1) {
-    throw new Error("Could not find the Prokip product header row in the CSV.");
+    throw new Error('Expected a CSV with exactly this header: "Product/Service,Selling Price".');
   }
 
   const rows = lines.slice(headerIndex + 1);
@@ -66,9 +66,8 @@ export function parseProkipProductsCsv(raw: string): ParsedImportRow[] {
 
   for (const row of rows) {
     const cells = parseCsvLine(row);
-    const title = cells[3]?.trim();
-    const price = parseMoney(cells[6] ?? "");
-    const stockCount = parseStock(cells[7] ?? "");
+    const title = cells[0]?.trim();
+    const price = parseMoney(cells[1] ?? "");
 
     if (!title || !price) continue;
 
@@ -79,7 +78,7 @@ export function parseProkipProductsCsv(raw: string): ParsedImportRow[] {
     parsed.push({
       title,
       price,
-      inStock: stockCount > 0,
+      inStock: true,
     });
   }
 

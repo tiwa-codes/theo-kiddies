@@ -22,14 +22,14 @@ export async function POST(req: Request) {
     const formData = await req.formData();
     const files = formData.getAll("files").filter((value): value is File => value instanceof File);
     const category = String(formData.get("category") ?? "").trim();
-    const ageGroup = String(formData.get("age_group") ?? "").trim();
+    const ageGroup = String(formData.get("age_group") ?? "").trim() || "Not specified";
 
     if (!files.length) {
       return Response.json({ error: "Please upload at least one CSV file." }, { status: 400 });
     }
 
-    if (!category || !ageGroup) {
-      return Response.json({ error: "Category and age group are required for bulk import." }, { status: 400 });
+    if (!category) {
+      return Response.json({ error: "Category is required for bulk import." }, { status: 400 });
     }
 
     const { data: existingProducts, error: existingError } = await supabase.from("products").select("slug");

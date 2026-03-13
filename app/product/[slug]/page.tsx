@@ -14,12 +14,14 @@ import { getProductBySlug, getAllProducts } from "@/lib/products";
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const product = await getProductBySlug(params.slug);
   if (!product) return { title: "Product" };
+  const hasSpecificAge = !!product.ageGroup && product.ageGroup !== "Not specified";
+  const agePhrase = hasSpecificAge ? ` for ${product.ageGroup}` : "";
   return {
     title: product.title,
-    description: `Buy ${product.title} for ${product.ageGroup} – ${product.category} from Theo Kiddies. Premium kids essentials with nationwide delivery.`,
+    description: `Buy ${product.title}${agePhrase} – ${product.category} from Theo Kiddies. Premium kids essentials with nationwide delivery.`,
     openGraph: {
       title: `${product.title} | Theo Kiddies`,
-      description: `Buy ${product.title} – ${product.category} for ${product.ageGroup} kids.`,
+      description: `Buy ${product.title} – ${product.category}${hasSpecificAge ? ` for ${product.ageGroup}` : ""} kids.`,
       images: product.images[0] ? [{ url: product.images[0] }] : [],
     },
   };

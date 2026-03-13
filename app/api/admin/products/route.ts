@@ -36,7 +36,7 @@ export async function POST(req: Request) {
         price: Number(body.price),
         compare_at_price: body.compare_at_price ? Number(body.compare_at_price) : null,
         badge: body.badge || null,
-        age_group: body.age_group,
+        age_group: String(body.age_group ?? "").trim() || "Not specified",
         category: body.category,
         images: body.images ?? [],
         colors: body.colors ?? [],

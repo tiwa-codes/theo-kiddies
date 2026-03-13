@@ -24,12 +24,13 @@ type FormState = {
 
 const EMPTY_FORM: FormState = {
   title: "", slug: "", price: "", compare_at_price: "", badge: "",
-  age_group: "4-7 Years", category: "Clothing",
+  age_group: "Not specified", category: "Clothing",
   images: "", colors: "", sizes: "", in_stock: true, description: "",
 };
 
-const AGE_GROUPS = ["0-12 Months", "1-3 Years", "4-7 Years", "8-12 Years"];
+const AGE_GROUPS = ["Not specified", "0-12 Months", "1-3 Years", "4-7 Years", "8-12 Years"];
 const CATEGORIES = ["Clothing", "Shoes", "Toys", "School Supplies", "Baby Essentials", "Accessories"];
+const AGE_OPTIONAL_CATEGORIES = new Set(["Shoes", "Accessories", "School Supplies"]);
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 function parseVariants(raw: string) {
@@ -118,6 +119,10 @@ export default function AdminProductsPage() {
       // Auto-update slug when title changes (only for new products)
       if (key === "title" && !editId) {
         next.slug = slugify(value as string);
+      }
+      // For categories where age is usually irrelevant, default to Not specified.
+      if (key === "category" && AGE_OPTIONAL_CATEGORIES.has(String(value)) && next.age_group !== "Not specified") {
+        next.age_group = "Not specified";
       }
       return next;
     });
@@ -348,21 +353,32 @@ export default function AdminProductsPage() {
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-700">Default age group</label>
+            <label className="mb-1 block text-sm font-semibold text-gray-700">Default age group (optional)</label>
             <select value={importAgeGroup} onChange={(e) => setImportAgeGroup(e.target.value)} className={inputCls} disabled={importing}>
               {AGE_GROUPS.map((age) => <option key={age}>{age}</option>)}
             </select>
           </div>
           <div>
             <label className="mb-1 block text-sm font-semibold text-gray-700">Default category</label>
-            <select value={importCategory} onChange={(e) => setImportCategory(e.target.value)} className={inputCls} disabled={importing}>
+            <select
+              value={importCategory}
+              onChange={(e) => {
+                const category = e.target.value;
+                setImportCategory(category);
+                if (AGE_OPTIONAL_CATEGORIES.has(category) && importAgeGroup !== "Not specified") {
+                  setImportAgeGroup("Not specified");
+                }
+              }}
+              className={inputCls}
+              disabled={importing}
+            >
               {CATEGORIES.map((category) => <option key={category}>{category}</option>)}
             </select>
           </div>
         </div>
 
         <p className="mt-3 text-xs text-gray-400">
-          Because the Prokip export does not include your storefront category or age group, every uploaded file in this batch will use the defaults above. If your exports mix different categories or ages, upload them in separate batches.
+          Because the Prokip export does not include your storefront category or age group, every uploaded file in this batch will use the defaults above. For Shoes, Accessories, and School Supplies, age is auto-switched to "Not specified".
         </p>
       </div>
 
@@ -428,7 +444,7 @@ export default function AdminProductsPage() {
                     </div>
                   </td>
                   <td className="px-5 py-3 text-gray-600">{product.category}</td>
-                  <td className="px-5 py-3 text-gray-600">{product.age_group}</td>
+                  <td className="px-5 py-3 text-gray-600">{product.age_group === "Not specified" ? "-" : product.age_group}</td>
                   <td className="px-5 py-3 font-semibold text-gray-900">
                     ₦{Number(product.price).toLocaleString("en-NG")}
                     {product.compare_at_price && (
@@ -498,10 +514,15 @@ export default function AdminProductsPage() {
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Age group <span className="text-red-500">*</span></label>
-                    <select required value={form.age_group} onChange={(e) => setField("age_group", e.target.value)} className={inputCls}>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">Age group <span className="text-gray-400 font-normal">(optional)</span></label>
+                    <select value={form.age_group} onChange={(e) => setField("age_group", e.target.value)} className={inputCls}>
                       {AGE_GROUPS.map((a) => <option key={a}>{a}</option>)}
                     </select>
+                    <p className="mt-1 text-xs text-gray-400">
+                      {AGE_OPTIONAL_CATEGORIES.has(form.category)
+                        ? "This category usually does not need age tagging."
+                        : "Choose Not specified if age does not apply."}
+                    </p>
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-semibold text-gray-700">Category <span className="text-red-500">*</span></label>

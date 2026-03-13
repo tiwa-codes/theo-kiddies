@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Pencil, Trash2, Search, ExternalLink, X, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, ExternalLink, X, Loader2, Upload, ChevronLeft, ChevronRight } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import type { DbProduct } from "@/lib/supabase";
 
@@ -74,6 +74,9 @@ export default function AdminProductsPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
 
   // ── Load products ──────────────────────────────────────────────────────────
   async function loadProducts() {
@@ -150,6 +153,98 @@ export default function AdminProductsPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function uploadFiles(files: File[]) {
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      files.forEach((file) => formData.append("files", file));
+
+      const res = await fetch("/api/admin/products/upload-image", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Upload failed");
+
+      const urls = Array.isArray(data.urls) ? data.urls : [];
+      if (!urls.length) throw new Error("No uploaded image URL returned");
+
+      setForm((prev) => ({
+        ...prev,
+        images: [prev.images, ...urls].filter(Boolean).join("\n"),
+      }));
+      showToast(`${urls.length} image${urls.length > 1 ? "s" : ""} uploaded ✓`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Image upload failed", false);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleUploadImages(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    await uploadFiles(Array.from(files));
+    e.target.value = "";
+  }
+
+  async function handleDropUpload(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragActive(false);
+    const files = Array.from(e.dataTransfer.files ?? []);
+    if (!files.length) return;
+    await uploadFiles(files);
+  }
+
+  const imageList = form.images
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  function updateImageList(next: string[]) {
+    setField("images", next.join("\n"));
+  }
+
+  function removeImageAt(index: number) {
+    const next = imageList.filter((_, i) => i !== index);
+    updateImageList(next);
+  }
+
+  function moveImage(index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= imageList.length) return;
+    const next = [...imageList];
+    const [picked] = next.splice(index, 1);
+    next.splice(target, 0, picked);
+    updateImageList(next);
+  }
+
+  function setCoverImage(index: number) {
+    if (index <= 0 || index >= imageList.length) return;
+    const next = [...imageList];
+    const [picked] = next.splice(index, 1);
+    next.unshift(picked);
+    updateImageList(next);
+  }
+
+  function handleImageDragStart(index: number) {
+    setDraggedImageIndex(index);
+  }
+
+  function handleImageDrop(index: number) {
+    if (draggedImageIndex === null || draggedImageIndex === index) {
+      setDraggedImageIndex(null);
+      return;
+    }
+
+    const next = [...imageList];
+    const [picked] = next.splice(draggedImageIndex, 1);
+    next.splice(index, 0, picked);
+    updateImageList(next);
+    setDraggedImageIndex(null);
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────
@@ -367,7 +462,111 @@ export default function AdminProductsPage() {
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-gray-700">Image URLs <span className="text-gray-400 font-normal">(one per line)</span></label>
                   <textarea rows={3} value={form.images} onChange={(e) => setField("images", e.target.value)} className={inputCls} placeholder={"https://your-bucket.supabase.co/storage/v1/object/public/products/img1.jpg\nhttps://…"} />
-                  <p className="mt-1 text-xs text-gray-400">Upload images to Supabase Storage or any CDN, then paste the URLs here.</p>
+                  <div
+                    className={`mt-3 rounded-2xl border-2 border-dashed p-4 text-center transition ${
+                      dragActive ? "border-brand-orange bg-brand-orange/5" : "border-brand-orange/20 bg-gray-50"
+                    }`}
+                    onDragEnter={(e) => {
+                      e.preventDefault();
+                      setDragActive(true);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragActive(true);
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      setDragActive(false);
+                    }}
+                    onDrop={handleDropUpload}
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
+                      Drag and drop images here
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">PNG, JPG, WebP up to your Supabase bucket limit</p>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-brand-orange/20 px-3 py-1.5 text-xs font-semibold text-brand-orange transition hover:bg-brand-orange/5">
+                      {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                      {uploading ? "Uploading..." : "Upload image files"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleUploadImages}
+                        disabled={uploading}
+                      />
+                    </label>
+                    <p className="text-xs text-gray-400">or paste image URLs manually.</p>
+                  </div>
+
+                  {imageList.length > 0 && (
+                    <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {imageList.map((url, index) => (
+                        <div
+                          key={`${url}-${index}`}
+                          className={`overflow-hidden rounded-xl border bg-white ${
+                            draggedImageIndex === index ? "border-brand-orange" : "border-gray-200"
+                          }`}
+                          draggable
+                          onDragStart={() => handleImageDragStart(index)}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={() => handleImageDrop(index)}
+                          onDragEnd={() => setDraggedImageIndex(null)}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={url} alt={`Product image ${index + 1}`} className="h-24 w-full object-cover" />
+                          <div className="flex items-center justify-between gap-1 p-2">
+                            <div>
+                              <p className="text-[10px] font-semibold text-gray-500">#{index + 1}</p>
+                              {index === 0 && (
+                                <p className="text-[10px] font-semibold text-brand-orange">Cover</p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                className="rounded-md p-1 text-brand-orange hover:bg-brand-orange/10 disabled:opacity-40"
+                                onClick={() => setCoverImage(index)}
+                                disabled={index === 0}
+                                aria-label="Set as cover image"
+                                title="Set as cover"
+                              >
+                                <Upload className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                                onClick={() => moveImage(index, -1)}
+                                disabled={index === 0}
+                                aria-label="Move image left"
+                              >
+                                <ChevronLeft className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                                onClick={() => moveImage(index, 1)}
+                                disabled={index === imageList.length - 1}
+                                aria-label="Move image right"
+                              >
+                                <ChevronRight className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded-md p-1 text-red-500 hover:bg-red-50"
+                                onClick={() => removeImageAt(index)}
+                                aria-label="Remove image"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

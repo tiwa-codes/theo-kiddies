@@ -1,10 +1,13 @@
-import { products } from "@/lib/data";
 import { Container } from "@/components/ui/Container";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { FadeIn } from "@/components/ui/FadeIn";
+import { getAllProducts } from "@/lib/products";
 
-export function BestSellers() {
+export async function BestSellers() {
+  const products = await getAllProducts();
+  if (products.length === 0) return null;
+
   return (
     <section className="py-14">
       <Container>

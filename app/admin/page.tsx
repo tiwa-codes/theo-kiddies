@@ -1,24 +1,49 @@
 import { TrendingUp, Package, ShoppingBag, Users, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
-import { products, featuredCategories } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
-  const inStock = products.filter((p) => p.inStock).length;
-  const outOfStock = products.filter((p) => !p.inStock).length;
-
   // Fetch live counts from Supabase (gracefully falls back to 0 if not configured yet)
+  let productCount = 0;
+  let inStock = 0;
+  let outOfStock = 0;
+  let categoryCount = 0;
   let orderCount = 0;
   let customerCount = 0;
+  let recentProducts: Array<{
+    id: string;
+    title: string;
+    category: string;
+    age_group: string;
+    price: number;
+    in_stock: boolean;
+  }> = [];
+
   try {
-    const [ordersRes, customersRes] = await Promise.all([
+    const [ordersRes, customersRes, productsCountRes, productsMetaRes, recentProductsRes] = await Promise.all([
       supabase.from("orders").select("*", { count: "exact", head: true }),
       supabase.from("customers").select("*", { count: "exact", head: true }),
+      supabase.from("products").select("id", { count: "exact", head: true }),
+      supabase.from("products").select("category, in_stock"),
+      supabase
+        .from("products")
+        .select("id, title, category, age_group, price, in_stock")
+        .order("created_at", { ascending: false })
+        .limit(5),
     ]);
+
     orderCount = ordersRes.count ?? 0;
     customerCount = customersRes.count ?? 0;
+    productCount = productsCountRes.count ?? 0;
+
+    const meta = productsMetaRes.data ?? [];
+    inStock = meta.filter((item) => item.in_stock).length;
+    outOfStock = meta.length - inStock;
+    categoryCount = new Set(meta.map((item) => item.category).filter(Boolean)).size;
+
+    recentProducts = (recentProductsRes.data as typeof recentProducts) ?? [];
   } catch {
     // Supabase not configured yet — show zeros
   }
@@ -26,7 +51,7 @@ export default async function AdminDashboard() {
   const stats = [
     {
       label: "Total Products",
-      value: products.length,
+      value: productCount,
       sub: `${inStock} in stock · ${outOfStock} out`,
       icon: Package,
       color: "bg-brand-orange/10 text-brand-orange",
@@ -34,7 +59,7 @@ export default async function AdminDashboard() {
     },
     {
       label: "Categories",
-      value: featuredCategories.length,
+      value: categoryCount,
       sub: "Active categories",
       icon: TrendingUp,
       color: "bg-purple-100 text-purple-600",
@@ -99,63 +124,37 @@ export default async function AdminDashboard() {
           </Link>
         </div>
         <div className="divide-y divide-gray-100">
-          {products.slice(0, 5).map((p) => (
+          {recentProducts.length === 0 && (
+            <div className="px-4 py-8 text-sm text-gray-500 sm:px-6">
+              No products yet. Add products from the Products page.
+            </div>
+          )}
+          {recentProducts.map((p) => (
             <div key={p.id} className="flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap sm:gap-4 sm:px-6">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-cream text-xs font-bold text-brand-orange">
                 {p.title[0]}
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-gray-900">{p.title}</p>
-                <p className="text-xs text-gray-400">{p.category} · {p.ageGroup}</p>
+                <p className="text-xs text-gray-400">{p.category} · {p.age_group}</p>
               </div>
               <div className="w-full text-left sm:w-auto sm:text-right">
-                <p className="text-sm font-semibold text-gray-900">₦{p.price}</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  ₦{Number(p.price).toLocaleString("en-NG")}
+                </p>
                 <span
                   className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                    p.inStock
+                    p.in_stock
                       ? "bg-green-100 text-green-700"
                       : "bg-red-100 text-red-600"
                   }`}
                 >
-                  {p.inStock ? "In stock" : "Out of stock"}
+                  {p.in_stock ? "In stock" : "Out of stock"}
                 </span>
               </div>
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Setup checklist */}
-      <div className="mt-8 rounded-2xl border border-dashed border-brand-orange/30 bg-brand-orange/5 p-4 sm:p-6">
-        <h2 className="font-semibold text-brand-cocoa">🚀 Store Setup Checklist</h2>
-        <ul className="mt-3 space-y-2 text-sm text-brand-cocoa/80">
-          {[
-            { done: true, text: "Global cart with Zustand (persists to localStorage)" },
-            { done: true, text: "Wishlist with persistent state" },
-            { done: true, text: "Paystack payment integration" },
-            { done: true, text: "Order confirmation with payment verification" },
-            { done: true, text: "Category filtering & sorting via URL params" },
-            { done: true, text: "Supabase database – orders & customers saved automatically" },
-            { done: true, text: "Resend transactional email on every successful order" },
-            { done: true, text: "Clerk auth protecting /admin routes" },
-            { done: false, text: "Add PAYSTACK live keys to Vercel environment variables" },
-            { done: false, text: "Set Paystack webhook URL in Paystack Dashboard" },
-            { done: false, text: "Verify sending domain in Resend Dashboard" },
-            { done: false, text: "Replace mock products with real CMS or database" },
-            { done: false, text: "Add real product images to /public/images" },
-          ].map(({ done, text }) => (
-            <li key={text} className="flex items-center gap-2">
-              <span
-                className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${
-                  done ? "bg-green-500 text-white" : "bg-gray-200 text-gray-500"
-                }`}
-              >
-                {done ? "✓" : "○"}
-              </span>
-              <span className={done ? "line-through opacity-60" : ""}>{text}</span>
-            </li>
-          ))}
-        </ul>
       </div>
     </div>
   );

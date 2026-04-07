@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Menu, Search, ShoppingBag, User, X } from "lucide-react";
-import { navAgeGroups, navCategories, navQuick, products } from "@/lib/data";
+import { navAgeGroups, navCategories, navQuick } from "@/lib/data";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { Drawer } from "@/components/ui/Drawer";
@@ -41,16 +41,7 @@ export function Header() {
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, []);
 
-  const searchResults =
-    searchQuery.length >= 2
-      ? products
-          .filter(
-            (p) =>
-              p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              p.category.toLowerCase().includes(searchQuery.toLowerCase())
-          )
-          .slice(0, 5)
-      : [];
+  const searchResults: Array<{ id: string; slug: string; title: string; category: string }> = [];
 
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();

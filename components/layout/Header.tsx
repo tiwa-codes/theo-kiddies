@@ -78,7 +78,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-brand-orange/10 bg-white/80 backdrop-blur">
-      <Container size="wide" className="flex items-center justify-between gap-3 py-3 sm:gap-6 sm:py-4">
+      <Container size="wide" className="flex items-center justify-between gap-3 py-2.5 sm:gap-6 sm:py-3">
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
@@ -92,9 +92,9 @@ export function Header() {
             <Image
               src="/images/theokiddies-logo-trimmed.png"
               alt="Theo Kiddies logo"
-              width={240}
-              height={48}
-              className="h-8 w-auto sm:h-10"
+              width={210}
+              height={42}
+              className="h-7 w-auto sm:h-8"
               priority
             />
           </Link>

@@ -108,7 +108,7 @@ export function Header() {
           >
             <button
               type="button"
-              className="flex items-center gap-1 text-sm font-semibold text-brand-cocoa"
+              className="flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-brand-cocoa"
               onClick={() => setMegaMenuOpen((prev) => (prev === "age" ? null : "age"))}
             >
               Shop by Age <ChevronDown className="h-4 w-4" />
@@ -145,7 +145,7 @@ export function Header() {
           >
             <button
               type="button"
-              className="flex items-center gap-1 text-sm font-semibold text-brand-cocoa"
+              className="flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-brand-cocoa"
               onClick={() => setMegaMenuOpen((prev) => (prev === "category" ? null : "category"))}
             >
               Shop by Category <ChevronDown className="h-4 w-4" />
@@ -187,7 +187,7 @@ export function Header() {
           </div>
 
           {navQuick.map((item) => (
-            <Link key={item.label} href={item.href} className="text-sm font-semibold text-brand-cocoa">
+            <Link key={item.label} href={item.href} className="shrink-0 whitespace-nowrap text-sm font-semibold text-brand-cocoa">
               {item.label}
             </Link>
           ))}

@@ -5,6 +5,7 @@ import { ShopByAge } from "@/components/sections/ShopByAge";
 import { FeaturedCategories } from "@/components/sections/FeaturedCategories";
 import { BestSellers } from "@/components/sections/BestSellers";
 import { PromoBanner } from "@/components/sections/PromoBanner";
+import { StoreStory } from "@/components/sections/StoreStory";
 import { WhyShop } from "@/components/sections/WhyShop";
 import { getHomeHeroContent } from "@/lib/site-content";
 
@@ -35,6 +36,7 @@ export default async function Home() {
       <FeaturedCategories />
       <BestSellers />
       <PromoBanner />
+      <StoreStory />
       <WhyShop />
       <Testimonials />
       <InstagramGrid />

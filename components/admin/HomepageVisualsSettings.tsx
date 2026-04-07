@@ -5,7 +5,7 @@ import { Loader2, ImagePlus, Save } from "lucide-react";
 
 export function HomepageVisualsSettings() {
   const [heroImageUrl, setHeroImageUrl] = useState("");
-  const [heroImageAlt, setHeroImageAlt] = useState("Happy kids with Theo Kiddies essentials");
+  const [heroImageAlt, setHeroImageAlt] = useState("Mother and son choosing children's outfits in a retail store");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -18,7 +18,7 @@ export function HomepageVisualsSettings() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Failed to load settings");
         setHeroImageUrl(data.heroImageUrl || "");
-        setHeroImageAlt(data.heroImageAlt || "Happy kids with Theo Kiddies essentials");
+        setHeroImageAlt(data.heroImageAlt || "Mother and son choosing children's outfits in a retail store");
       } catch (err) {
         setMessage({ text: err instanceof Error ? err.message : "Failed to load settings", ok: false });
       } finally {

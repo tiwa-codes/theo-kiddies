@@ -9,8 +9,8 @@ export type HomeHeroContent = {
 };
 
 const DEFAULT_HERO: HomeHeroContent = {
-  imageUrl: "/images/hero-kids.svg",
-  imageAlt: "Happy kids with Theo Kiddies essentials",
+  imageUrl: "/images/gallery/envato-mother-son.jpg",
+  imageAlt: "Mother and son choosing children's outfits in a retail store",
 };
 
 export async function getHomeHeroContent(): Promise<HomeHeroContent> {

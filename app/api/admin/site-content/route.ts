@@ -51,7 +51,7 @@ export async function PUT(req: Request) {
 
     const payload = [
       { key: HOME_HERO_KEYS.image, value: heroImageUrl },
-      { key: HOME_HERO_KEYS.alt, value: heroImageAlt || "Happy kids with Theo Kiddies essentials" },
+      { key: HOME_HERO_KEYS.alt, value: heroImageAlt || "Mother and son choosing children's outfits in a retail store" },
     ];
 
     const { error } = await supabase.from("site_content").upsert(payload, { onConflict: "key" });

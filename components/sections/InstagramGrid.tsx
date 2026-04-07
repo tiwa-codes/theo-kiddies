@@ -8,14 +8,14 @@ export function InstagramGrid() {
     <section className="py-14">
       <Container>
         <SectionHeader
-          title="Theo Kiddies in the wild"
-          subtitle="Share your moments with #TheoKiddies for a chance to be featured."
+          title="Theo Kiddies gallery"
+          subtitle="Real moments from our physical store and curated campaign visuals."
           align="center"
         />
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {instagramImages.map((image) => (
-            <div key={image.id} className="relative aspect-square overflow-hidden rounded-2xl bg-brand-cream">
-              <Image src={image.src} alt="Theo Kiddies Instagram" fill className="object-cover" />
+            <div key={image.id} className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-brand-cream">
+              <Image src={image.src} alt={image.alt} fill className="object-cover" />
             </div>
           ))}
         </div>

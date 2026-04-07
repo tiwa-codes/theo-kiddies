@@ -78,9 +78,6 @@ export default function AdminProductsPage() {
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
-  const [importing, setImporting] = useState(false);
-  const [importCategory, setImportCategory] = useState(CATEGORIES[0]);
-  const [importAgeGroup, setImportAgeGroup] = useState(AGE_GROUPS[0]);
 
   // ── Load products ──────────────────────────────────────────────────────────
   async function loadProducts() {
@@ -255,34 +252,6 @@ export default function AdminProductsPage() {
     setDraggedImageIndex(null);
   }
 
-  async function handleImportCsv(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    if (!files.length) return;
-
-    setImporting(true);
-    try {
-      const formData = new FormData();
-      files.forEach((file) => formData.append("files", file));
-      formData.append("category", importCategory);
-      formData.append("age_group", importAgeGroup);
-
-      const res = await fetch("/api/admin/products/import", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Import failed");
-
-      showToast(`Imported ${data.imported} product${data.imported === 1 ? "" : "s"} from ${data.files} CSV file${data.files === 1 ? "" : "s"} ✓`);
-      await loadProducts();
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "CSV import failed", false);
-    } finally {
-      setImporting(false);
-      e.target.value = "";
-    }
-  }
-
   // ── Delete ────────────────────────────────────────────────────────────────
   async function handleDelete(p: DbProduct) {
     if (!confirm(`Delete "${p.title}"? This cannot be undone.`)) return;
@@ -327,59 +296,6 @@ export default function AdminProductsPage() {
           <Plus className="h-4 w-4" />
           Add product
         </button>
-      </div>
-
-      <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-base font-bold text-gray-900">Bulk import from Prokip CSV</h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Upload one or many Prokip product export files. This importer uses only product name, selling price, and stock status.
-            </p>
-          </div>
-          <label className={`inline-flex cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white transition ${importing ? "bg-brand-orange/70" : "bg-brand-orange hover:bg-brand-orange/90"}`}>
-            {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-            {importing ? "Importing…" : "Upload CSV files"}
-            <input
-              type="file"
-              accept=".csv,text/csv"
-              multiple
-              className="hidden"
-              onChange={handleImportCsv}
-              disabled={importing}
-            />
-          </label>
-        </div>
-
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-700">Default age group (optional)</label>
-            <select value={importAgeGroup} onChange={(e) => setImportAgeGroup(e.target.value)} className={inputCls} disabled={importing}>
-              {AGE_GROUPS.map((age) => <option key={age}>{age}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-700">Default category</label>
-            <select
-              value={importCategory}
-              onChange={(e) => {
-                const category = e.target.value;
-                setImportCategory(category);
-                if (AGE_OPTIONAL_CATEGORIES.has(category) && importAgeGroup !== "Not specified") {
-                  setImportAgeGroup("Not specified");
-                }
-              }}
-              className={inputCls}
-              disabled={importing}
-            >
-              {CATEGORIES.map((category) => <option key={category}>{category}</option>)}
-            </select>
-          </div>
-        </div>
-
-        <p className="mt-3 text-xs text-gray-400">
-          Because the Prokip export does not include your storefront category or age group, every uploaded file in this batch will use the defaults above. For Shoes, Accessories, and School Supplies, age is auto-switched to "Not specified".
-        </p>
       </div>
 
       {/* Search */}

@@ -23,12 +23,21 @@ export function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const megaMenuCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
 
   const cartItems = useCartStore((s) => s.items);
   const cartCount = mounted ? cartItems.reduce((t, i) => t + i.quantity, 0) : 0;
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    return () => {
+      if (megaMenuCloseTimer.current) {
+        clearTimeout(megaMenuCloseTimer.current);
+      }
+    };
+  }, []);
 
   // Close search dropdown when clicking outside
   useEffect(() => {
@@ -49,6 +58,22 @@ export function Header() {
       router.push(`/category/clothing?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchOpen(false);
     }
+  }
+
+  function openMegaMenu(menu: "age" | "category") {
+    if (megaMenuCloseTimer.current) {
+      clearTimeout(megaMenuCloseTimer.current);
+    }
+    setMegaMenuOpen(menu);
+  }
+
+  function closeMegaMenuSoon() {
+    if (megaMenuCloseTimer.current) {
+      clearTimeout(megaMenuCloseTimer.current);
+    }
+    megaMenuCloseTimer.current = setTimeout(() => {
+      setMegaMenuOpen(null);
+    }, 120);
   }
 
   return (
@@ -77,79 +102,85 @@ export function Header() {
         <nav className="hidden items-center gap-6 lg:flex">
           <div
             className="relative"
-            onMouseEnter={() => setMegaMenuOpen("age")}
-            onMouseLeave={() => setMegaMenuOpen(null)}
+            onMouseEnter={() => openMegaMenu("age")}
+            onMouseLeave={closeMegaMenuSoon}
           >
             <button
               type="button"
               className="flex items-center gap-1 text-sm font-semibold text-brand-cocoa"
+              onClick={() => setMegaMenuOpen((prev) => (prev === "age" ? null : "age"))}
             >
               Shop by Age <ChevronDown className="h-4 w-4" />
             </button>
             <div
               className={cn(
-                "absolute left-0 top-full mt-4 w-[420px] rounded-2xl bg-white p-6 shadow-float transition",
+                "absolute left-0 top-full z-50 w-[420px] pt-2 transition",
                 megaMenuOpen === "age" ? "opacity-100" : "pointer-events-none opacity-0"
               )}
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
-                Age groups
-              </p>
-              <div className="mt-4 grid gap-3">
-                {navAgeGroups.map((item) => (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className="rounded-2xl border border-brand-orange/10 px-4 py-3 text-sm font-semibold text-brand-cocoa transition hover:bg-brand-cream"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
+              <div className="rounded-2xl bg-white p-6 shadow-float">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
+                  Age groups
+                </p>
+                <div className="mt-4 grid gap-3">
+                  {navAgeGroups.map((item) => (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      className="rounded-2xl border border-brand-orange/10 px-4 py-3 text-sm font-semibold text-brand-cocoa transition hover:bg-brand-cream"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
           <div
             className="relative"
-            onMouseEnter={() => setMegaMenuOpen("category")}
-            onMouseLeave={() => setMegaMenuOpen(null)}
+            onMouseEnter={() => openMegaMenu("category")}
+            onMouseLeave={closeMegaMenuSoon}
           >
             <button
               type="button"
               className="flex items-center gap-1 text-sm font-semibold text-brand-cocoa"
+              onClick={() => setMegaMenuOpen((prev) => (prev === "category" ? null : "category"))}
             >
               Shop by Category <ChevronDown className="h-4 w-4" />
             </button>
             <div
               className={cn(
-                "absolute left-0 top-full mt-4 w-[560px] rounded-2xl bg-white p-6 shadow-float transition",
+                "absolute left-0 top-full z-50 w-[560px] pt-2 transition",
                 megaMenuOpen === "category" ? "opacity-100" : "pointer-events-none opacity-0"
               )}
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
-                Categories
-              </p>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                {navCategories.map((item) => (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className="rounded-2xl border border-brand-orange/10 px-4 py-3 text-sm font-semibold text-brand-cocoa transition hover:bg-brand-cream"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-              <div className="mt-5 flex flex-wrap gap-3">
-                {navQuick.map((item) => (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className="rounded-full bg-brand-cream px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-cocoa"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
+              <div className="rounded-2xl bg-white p-6 shadow-float">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
+                  Categories
+                </p>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  {navCategories.map((item) => (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      className="rounded-2xl border border-brand-orange/10 px-4 py-3 text-sm font-semibold text-brand-cocoa transition hover:bg-brand-cream"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  {navQuick.map((item) => (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      className="rounded-full bg-brand-cream px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-cocoa"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

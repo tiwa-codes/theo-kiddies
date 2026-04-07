@@ -92,9 +92,9 @@ export function Header() {
             <Image
               src="/images/theokiddies-logo-trimmed.png"
               alt="Theo Kiddies logo"
-              width={188}
-              height={38}
-              className="h-6 w-auto sm:h-7"
+              width={150}
+              height={30}
+              className="h-5 w-auto sm:h-6"
               priority
             />
           </Link>

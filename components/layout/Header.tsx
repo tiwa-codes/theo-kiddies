@@ -90,11 +90,12 @@ export function Header() {
           </button>
           <Link href="/" className="flex items-center">
             <Image
-              src="/images/theokiddies1.png"
+              src="/images/theokiddies-logo-trimmed.png"
               alt="Theo Kiddies logo"
-              width={64}
-              height={64}
+              width={240}
+              height={48}
               className="h-8 w-auto sm:h-10"
+              priority
             />
           </Link>
         </div>
@@ -263,7 +264,7 @@ export function Header() {
         <div className="flex h-full flex-col gap-6 px-6 py-6">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2" onClick={() => setMobileOpen(false)}>
-              <Image src="/images/theokiddies1.png" alt="Theo Kiddies" width={38} height={38} />
+              <Image src="/images/theokiddies-logo-trimmed.png" alt="Theo Kiddies" width={180} height={36} className="h-7 w-auto" />
               <span className="text-lg font-bold">Theo Kiddies</span>
             </Link>
             <button type="button" onClick={() => setMobileOpen(false)}>

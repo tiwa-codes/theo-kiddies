@@ -202,64 +202,6 @@ export const testimonials = [
   },
 ];
 
-export const instagramImages = [
-  {
-    id: 1,
-    src: "/images/gallery/store-3364.jpg",
-    alt: "Physical Theo Kiddies store with colorful children's outfits on display",
-  },
-  {
-    id: 2,
-    src: "/images/gallery/store-3365.jpg",
-    alt: "Inside view of Theo Kiddies store showing organized kidswear racks",
-  },
-  {
-    id: 3,
-    src: "/images/gallery/store-3366.jpg",
-    alt: "Theo Kiddies store section with neatly arranged baby and toddler clothing",
-  },
-  {
-    id: 4,
-    src: "/images/gallery/store-3368.jpg",
-    alt: "Physical store shelves and rails filled with children's fashion items",
-  },
-  {
-    id: 5,
-    src: "/images/gallery/store-3370.jpg",
-    alt: "Theo Kiddies retail floor showcasing kids essentials and accessories",
-  },
-  {
-    id: 6,
-    src: "/images/gallery/store-3371.jpg",
-    alt: "In-store children clothing section with bright and playful styles",
-  },
-  {
-    id: 7,
-    src: "/images/gallery/store-3372.jpg",
-    alt: "Display area in Theo Kiddies physical store with infant and kids products",
-  },
-  {
-    id: 8,
-    src: "/images/gallery/envato-happy-expecting.jpg",
-    alt: "Pregnant shopper browsing baby clothes in a kidswear store",
-  },
-  {
-    id: 9,
-    src: "/images/gallery/envato-shop-interior.jpg",
-    alt: "Kids fashion store interior with mannequins and clothing racks",
-  },
-  {
-    id: 10,
-    src: "/images/gallery/envato-mother-daughter.jpg",
-    alt: "Mother shopping with child in a children's clothing store",
-  },
-  {
-    id: 11,
-    src: "/images/gallery/envato-mother-son.jpg",
-    alt: "Mother and son choosing children's outfits in a retail store",
-  },
-];
-
 export const storeStoryImages = [
   {
     id: 1,

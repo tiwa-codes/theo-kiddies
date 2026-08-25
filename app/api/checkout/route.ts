@@ -1,23 +1,46 @@
-import { InvalidCartError, parseRequestedItems, priceOrder } from "@/lib/checkout";
+import {
+  InvalidCartError,
+  parseRequestedItems,
+  parseShippingAddress,
+  priceOrder,
+} from "@/lib/checkout";
+import { calculateDeliveryFee, type DeliveryRate } from "@/lib/delivery";
 import { getProductsBySlugs } from "@/lib/products";
+import { supabase } from "@/lib/supabase";
 
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY ?? "";
 const PAYSTACK_INIT_URL = "https://api.paystack.co/transaction/initialize";
 
-function isValidEmail(value: unknown): value is string {
-  return typeof value === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
+/**
+ * Active delivery rates, looked up server-side — never trust a fee the
+ * client claims. No logistics partner is chosen yet, so today this is
+ * always empty and every order comes back to_be_quoted; see lib/delivery.ts.
+ */
+async function getActiveDeliveryRates(): Promise<DeliveryRate[]> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("delivery_rates")
+    .select("state, fee, active")
+    .eq("active", true);
+  if (error) throw error;
+
+  return (data ?? []).map((row: { state: string; fee: number; active: boolean }) => ({
+    state: row.state,
+    fee: Number(row.fee),
+    active: Boolean(row.active),
+  }));
 }
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as { items?: unknown; email?: unknown };
+    const body = (await req.json()) as { items?: unknown; address?: unknown };
 
-    if (!isValidEmail(body.email)) {
-      return Response.json({ error: "A valid email address is required" }, { status: 400 });
-    }
-    const email = body.email.trim().toLowerCase();
-
-    // The browser tells us WHAT and HOW MANY. It does not get to say what it costs.
+    // The browser tells us WHAT it wants, HOW MANY, and WHERE to send it.
+    // It does not get to say what any of that costs.
+    const address = parseShippingAddress(body.address);
     const requested = parseRequestedItems(body.items);
     const catalog = await getProductsBySlugs(requested.map((item) => item.slug));
     const priced = priceOrder(requested, catalog);
@@ -25,6 +48,14 @@ export async function POST(req: Request) {
     if (!priced.ok) {
       return Response.json({ error: priced.error }, { status: 409 });
     }
+
+    const rates = await getActiveDeliveryRates();
+    const delivery = calculateDeliveryFee({
+      state: address.state,
+      subtotalNaira: priced.subtotalNaira,
+      rates,
+    });
+    const amountKobo = priced.amountKobo + Math.round(delivery.fee * 100);
 
     const baseUrl = process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000";
 
@@ -35,8 +66,8 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email,
-        amount: priced.amountKobo,
+        email: address.email,
+        amount: amountKobo,
         currency: process.env.PAYSTACK_CURRENCY ?? "NGN",
         callback_url: `${baseUrl}/order-confirmation`,
         metadata: {
@@ -52,6 +83,14 @@ export async function POST(req: Request) {
               .filter(Boolean)
               .join(" · "),
           })),
+          // A single key, not custom_fields — custom_fields is for short
+          // display strings and has a size ceiling; the webhook reads the
+          // full address back out of here to persist it on the order.
+          order_details: {
+            shipping_address: address,
+            delivery_fee: delivery.fee,
+            delivery_status: delivery.status,
+          },
         },
       }),
     });
@@ -65,8 +104,11 @@ export async function POST(req: Request) {
     return Response.json({
       url: data.data.authorization_url,
       reference: data.data.reference,
-      // Echoed back so the client can show the authoritative total if it wants to.
+      // Echoed back so the client can show the authoritative total before payment.
       subtotal: priced.subtotalNaira,
+      deliveryFee: delivery.fee,
+      deliveryStatus: delivery.status,
+      deliveryMessage: delivery.message,
     });
   } catch (err: unknown) {
     if (err instanceof InvalidCartError) {

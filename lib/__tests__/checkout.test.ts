@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { MAX_QUANTITY_PER_LINE, parseRequestedItems, priceOrder } from "@/lib/checkout";
+import {
+  MAX_QUANTITY_PER_LINE,
+  parseRequestedItems,
+  parseShippingAddress,
+  priceOrder,
+} from "@/lib/checkout";
 import type { Product } from "@/types";
 
 function product(overrides: Partial<Product> = {}): Product {
@@ -112,5 +117,109 @@ describe("priceOrder", () => {
       [product({ price: 0 })]
     );
     expect(result.ok).toBe(false);
+  });
+});
+
+function shippingAddress(overrides: Record<string, unknown> = {}) {
+  return {
+    fullName: "Ada Lovelace",
+    email: "ada@example.com",
+    phone: "08031234567",
+    state: "Lagos",
+    city: "Ikeja",
+    street: "12 Allen Avenue",
+    ...overrides,
+  };
+}
+
+describe("parseShippingAddress", () => {
+  it("parses a valid minimal address, defaulting optional fields", () => {
+    const address = parseShippingAddress(shippingAddress());
+    expect(address).toEqual({
+      fullName: "Ada Lovelace",
+      email: "ada@example.com",
+      phone: "08031234567",
+      state: "Lagos",
+      city: "Ikeja",
+      street: "12 Allen Avenue",
+      newsletterOptIn: false,
+    });
+  });
+
+  it("accepts optional fields when provided", () => {
+    const address = parseShippingAddress(
+      shippingAddress({
+        altPhone: "07031234567",
+        landmark: "Opposite the blue gate",
+        notes: "Leave with the gateman",
+        newsletterOptIn: true,
+      })
+    );
+    expect(address.altPhone).toBe("07031234567");
+    expect(address.landmark).toBe("Opposite the blue gate");
+    expect(address.notes).toBe("Leave with the gateman");
+    expect(address.newsletterOptIn).toBe(true);
+  });
+
+  it("trims whitespace from every string field", () => {
+    const address = parseShippingAddress(
+      shippingAddress({ fullName: "  Ada Lovelace  ", city: "  Ikeja ", street: " 12 Allen Avenue " })
+    );
+    expect(address.fullName).toBe("Ada Lovelace");
+    expect(address.city).toBe("Ikeja");
+    expect(address.street).toBe("12 Allen Avenue");
+  });
+
+  it("rejects a missing state", () => {
+    const { state, ...rest } = shippingAddress();
+    expect(() => parseShippingAddress(rest)).toThrow();
+  });
+
+  it("rejects a state outside the seeded list", () => {
+    expect(() => parseShippingAddress(shippingAddress({ state: "Neverland" }))).toThrow();
+  });
+
+  it("rejects a UK phone number", () => {
+    expect(() => parseShippingAddress(shippingAddress({ phone: "+447911123456" }))).toThrow();
+  });
+
+  it("newsletterOptIn defaults to false when absent", () => {
+    const { newsletterOptIn, ...rest } = shippingAddress();
+    expect(parseShippingAddress(rest).newsletterOptIn).toBe(false);
+  });
+
+  it("newsletterOptIn never becomes true from a truthy non-boolean", () => {
+    expect(parseShippingAddress(shippingAddress({ newsletterOptIn: "true" })).newsletterOptIn).toBe(
+      false
+    );
+    expect(parseShippingAddress(shippingAddress({ newsletterOptIn: 1 })).newsletterOptIn).toBe(
+      false
+    );
+  });
+
+  it("rejects a missing or invalid email", () => {
+    const { email, ...rest } = shippingAddress();
+    expect(() => parseShippingAddress(rest)).toThrow();
+    expect(() => parseShippingAddress(shippingAddress({ email: "not-an-email" }))).toThrow();
+  });
+
+  it("rejects each missing required field", () => {
+    for (const field of ["fullName", "city", "street"]) {
+      const address = shippingAddress();
+      delete (address as Record<string, unknown>)[field];
+      expect(() => parseShippingAddress(address)).toThrow();
+    }
+  });
+
+  it("rejects a field that is too long", () => {
+    expect(() =>
+      parseShippingAddress(shippingAddress({ street: "x".repeat(500) }))
+    ).toThrow();
+  });
+
+  it("rejects non-object input", () => {
+    expect(() => parseShippingAddress(null)).toThrow();
+    expect(() => parseShippingAddress("address")).toThrow();
+    expect(() => parseShippingAddress([])).toThrow();
   });
 });

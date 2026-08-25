@@ -6,6 +6,7 @@
  * price arriving in a request body is attacker-controlled. Everything here
  * prices from the catalogue.
  */
+import { NIGERIAN_STATES, isValidNigerianPhone } from "@/lib/nigeria";
 import type { Product } from "@/types";
 
 export const MAX_QUANTITY_PER_LINE = 20;
@@ -103,4 +104,104 @@ export function priceOrder(items: RequestedItem[], catalog: Product[]): PricingR
   }
 
   return { ok: true, lines, subtotalNaira: amountKobo / 100, amountKobo };
+}
+
+export type ShippingAddress = {
+  fullName: string;
+  email: string;
+  phone: string;
+  state: string;
+  city: string;
+  street: string;
+  altPhone?: string;
+  landmark?: string;
+  notes?: string;
+  newsletterOptIn: boolean;
+};
+
+const FIELD_MAX_LENGTHS = {
+  fullName: 150,
+  email: 254,
+  city: 100,
+  street: 200,
+  altPhone: 20,
+  landmark: 200,
+  notes: 500,
+} as const;
+
+function requiredString(value: unknown, label: string, maxLength: number): string {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new InvalidCartError(`Please enter your ${label}.`);
+  }
+  const trimmed = value.trim();
+  if (trimmed.length > maxLength) {
+    throw new InvalidCartError(`Your ${label} is too long.`);
+  }
+  return trimmed;
+}
+
+function optionalString(value: unknown, label: string, maxLength: number): string | undefined {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (typeof value !== "string") {
+    throw new InvalidCartError(`Please enter a valid ${label}.`);
+  }
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (trimmed.length > maxLength) {
+    throw new InvalidCartError(`Your ${label} is too long.`);
+  }
+  return trimmed;
+}
+
+/**
+ * Validate and narrow an untrusted checkout body down to the agreed
+ * shipping-address fields. Every rejection throws InvalidCartError with a
+ * message the customer can act on — this runs server-side even though the
+ * form already validates, because the form can be bypassed.
+ */
+export function parseShippingAddress(raw: unknown): ShippingAddress {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    throw new InvalidCartError("Delivery details are missing.");
+  }
+  const body = raw as Record<string, unknown>;
+
+  const fullName = requiredString(body.fullName, "full name", FIELD_MAX_LENGTHS.fullName);
+
+  const emailRaw = requiredString(body.email, "email address", FIELD_MAX_LENGTHS.email);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailRaw)) {
+    throw new InvalidCartError("Please enter a valid email address.");
+  }
+  const email = emailRaw.toLowerCase();
+
+  const phone = requiredString(body.phone, "phone number", 20);
+  if (!isValidNigerianPhone(phone)) {
+    throw new InvalidCartError("Please enter a valid Nigerian phone number.");
+  }
+
+  const state = requiredString(body.state, "state", 40);
+  if (!(NIGERIAN_STATES as readonly string[]).includes(state)) {
+    throw new InvalidCartError("Please select a valid state from the list.");
+  }
+
+  const city = requiredString(body.city, "city or town", FIELD_MAX_LENGTHS.city);
+  const street = requiredString(body.street, "street address", FIELD_MAX_LENGTHS.street);
+
+  const altPhone = optionalString(body.altPhone, "alternative phone number", FIELD_MAX_LENGTHS.altPhone);
+  const landmark = optionalString(body.landmark, "landmark", FIELD_MAX_LENGTHS.landmark);
+  const notes = optionalString(body.notes, "delivery notes", FIELD_MAX_LENGTHS.notes);
+
+  const address: ShippingAddress = {
+    fullName,
+    email,
+    phone,
+    state,
+    city,
+    street,
+    newsletterOptIn: body.newsletterOptIn === true,
+  };
+  if (altPhone) address.altPhone = altPhone;
+  if (landmark) address.landmark = landmark;
+  if (notes) address.notes = notes;
+
+  return address;
 }

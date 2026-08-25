@@ -25,10 +25,25 @@ export async function POST(req: Request) {
     const event = JSON.parse(rawBody);
 
     if (event.event === "charge.success") {
-      const { reference, amount, currency, customer, metadata } = event.data;
+      const { reference, amount, currency, customer, metadata, paid_at } = event.data;
       const email: string = customer.email;
       const amountDecimal: number = amount / 100;
       const items = metadata?.custom_fields ?? [];
+
+      // Set by app/api/checkout/route.ts under a single metadata key (not
+      // custom_fields — see that route for why). Missing on any order that
+      // predates this, or that didn't go through our own checkout API.
+      const orderDetails = metadata?.order_details ?? null;
+      const shippingAddress = orderDetails?.shipping_address ?? null;
+      const deliveryFee: number =
+        typeof orderDetails?.delivery_fee === "number" ? orderDetails.delivery_fee : 0;
+      const deliveryStatus: "quoted" | "to_be_quoted" =
+        orderDetails?.delivery_status === "quoted" ? "quoted" : "to_be_quoted";
+      const newsletterOptIn = Boolean(shippingAddress?.newsletterOptIn);
+      // Paystack's own event timestamp, not `new Date()` — Paystack can
+      // redeliver the same webhook, and the upsert below would otherwise
+      // re-stamp consent with a fresh time on every redelivery.
+      const newsletterOptInAt = newsletterOptIn ? paid_at ?? new Date().toISOString() : null;
 
       // 1. Save order to Supabase (ignore duplicate references)
       const { error: orderError } = await supabase.from("orders").upsert(
@@ -39,6 +54,11 @@ export async function POST(req: Request) {
           email,
           items,
           status: "paid",
+          shipping_address: shippingAddress,
+          delivery_fee: deliveryFee,
+          delivery_status: deliveryStatus,
+          newsletter_opt_in: newsletterOptIn,
+          newsletter_opt_in_at: newsletterOptInAt,
         },
         { onConflict: "reference" }
       );
@@ -78,6 +98,9 @@ export async function POST(req: Request) {
         amount: amountDecimal,
         currency: currency ?? "NGN",
         items,
+        shippingAddress,
+        deliveryFee,
+        deliveryStatus,
       });
 
       console.log("✅ Order saved + email sent:", { reference, email, amount: amountDecimal });

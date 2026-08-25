@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import type { OrderItem } from "@/lib/supabase";
+import type { ShippingAddress } from "@/lib/checkout";
 
 // The "from" address must be on a domain you've verified in Resend.
 // e.g. add theokiddies.com in Resend → Domains, then use orders@theokiddies.com
@@ -12,18 +13,36 @@ function getResend() {
   return new Resend(key);
 }
 
+// shippingAddress carries customer-entered free text (name, street, landmark)
+// into raw HTML — escape it, this is the one place in this email that isn't
+// either our own copy or a Paystack-echoed value we generated ourselves.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export async function sendOrderConfirmation({
   email,
   reference,
   amount,
   currency,
   items,
+  shippingAddress,
+  deliveryFee,
+  deliveryStatus,
 }: {
   email: string;
   reference: string;
   amount: number;
   currency: string;
   items: OrderItem[];
+  shippingAddress?: ShippingAddress | null;
+  deliveryFee?: number;
+  deliveryStatus?: "quoted" | "to_be_quoted";
 }) {
   const formattedAmount = amount.toLocaleString("en-NG", {
     minimumFractionDigits: 2,
@@ -38,6 +57,25 @@ export async function sendOrderConfirmation({
       </tr>`
     )
     .join("");
+
+  const deliveryLine =
+    deliveryStatus === "quoted"
+      ? deliveryFee && deliveryFee > 0
+        ? `Delivery: ₦${deliveryFee.toLocaleString("en-NG")}`
+        : "Delivery: Free"
+      : "Delivery: to be confirmed on WhatsApp before dispatch";
+
+  const deliveryBox = shippingAddress
+    ? `
+              <div style="background:#fdf6f0;border-radius:16px;padding:24px;margin-bottom:24px;">
+                <p style="margin:0 0 12px;font-size:11px;font-weight:700;color:#c95f1a;letter-spacing:0.2em;text-transform:uppercase;">Delivery Details</p>
+                <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#3b2314;">${escapeHtml(shippingAddress.fullName)}</p>
+                <p style="margin:0 0 4px;font-size:14px;color:#7a5f50;">${escapeHtml(shippingAddress.street)}, ${escapeHtml(shippingAddress.city)}, ${escapeHtml(shippingAddress.state)}</p>
+                ${shippingAddress.landmark ? `<p style="margin:0 0 4px;font-size:13px;color:#7a5f50;">Landmark: ${escapeHtml(shippingAddress.landmark)}</p>` : ""}
+                <p style="margin:0 0 12px;font-size:13px;color:#7a5f50;">${escapeHtml(shippingAddress.phone)}</p>
+                <p style="margin:0;font-size:14px;font-weight:700;color:#3b2314;">${deliveryLine}</p>
+              </div>`
+    : "";
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -81,7 +119,7 @@ export async function sendOrderConfirmation({
                   </tr>
                 </table>
               </div>
-
+${deliveryBox}
               <!-- Reference -->
               <p style="text-align:center;font-size:11px;font-weight:700;color:#c95f1a;letter-spacing:0.2em;text-transform:uppercase;background:#fdf6f0;border-radius:99px;padding:10px 20px;display:inline-block;">
                 Ref: ${reference.toUpperCase()}

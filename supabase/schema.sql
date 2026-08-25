@@ -87,3 +87,43 @@ alter table site_content enable row level security;
 create policy "Public can read site content"
   on site_content for select
   using (true);
+
+-- ============================================================
+-- Blocker 04: delivery + address capture
+-- ============================================================
+
+-- Orders gain a shipping address and delivery/newsletter fields.
+-- delivery_status starts 'to_be_quoted' — most states have no active rate
+-- yet, since no logistics partner is chosen. See lib/delivery.ts.
+alter table orders
+  add column if not exists shipping_address jsonb,
+  add column if not exists delivery_fee numeric(12, 2) not null default 0,
+  add column if not exists delivery_status text not null default 'to_be_quoted'
+    check (delivery_status in ('quoted', 'to_be_quoted')),
+  add column if not exists newsletter_opt_in boolean not null default false,
+  add column if not exists newsletter_opt_in_at timestamptz;
+
+-- Delivery rates: per-state flat fee, set as store policy (not a courier
+-- quote). Seeded inactive with a zero fee until real rates are chosen —
+-- see lib/delivery.ts for what an inactive rate means at checkout.
+create table if not exists delivery_rates (
+  state      text primary key,
+  fee        numeric(12, 2) not null default 0,
+  active     boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+
+-- RLS: service role only. No public policy — rates are looked up
+-- server-side during checkout, never read directly by the browser.
+alter table delivery_rates enable row level security;
+
+insert into delivery_rates (state) values
+  ('Abia'), ('Adamawa'), ('Akwa Ibom'), ('Anambra'), ('Bauchi'),
+  ('Bayelsa'), ('Benue'), ('Borno'), ('Cross River'), ('Delta'),
+  ('Ebonyi'), ('Edo'), ('Ekiti'), ('Enugu'), ('FCT (Abuja)'),
+  ('Gombe'), ('Imo'), ('Jigawa'), ('Kaduna'), ('Kano'),
+  ('Katsina'), ('Kebbi'), ('Kogi'), ('Kwara'), ('Lagos'),
+  ('Nasarawa'), ('Niger'), ('Ogun'), ('Ondo'), ('Osun'),
+  ('Oyo'), ('Plateau'), ('Rivers'), ('Sokoto'), ('Taraba'),
+  ('Yobe'), ('Zamfara')
+on conflict (state) do nothing;

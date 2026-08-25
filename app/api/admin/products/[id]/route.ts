@@ -1,9 +1,12 @@
+import { requireAdmin, adminAuthResponse } from "@/lib/admin-auth";
 import { supabase } from "@/lib/supabase";
 import { slugify } from "@/lib/utils";
 
 // PUT /api/admin/products/[id] — update a product
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {
+    await requireAdmin();
+
     const body = await req.json();
 
     if (body.title && !body.slug) {
@@ -35,6 +38,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     if (error) throw error;
     return Response.json(data);
   } catch (err) {
+    const denied = adminAuthResponse(err);
+    if (denied) return denied;
     return Response.json({ error: String(err) }, { status: 500 });
   }
 }
@@ -42,10 +47,14 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 // DELETE /api/admin/products/[id] — delete a product
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   try {
+    await requireAdmin();
+
     const { error } = await supabase.from("products").delete().eq("id", params.id);
     if (error) throw error;
     return Response.json({ success: true });
   } catch (err) {
+    const denied = adminAuthResponse(err);
+    if (denied) return denied;
     return Response.json({ error: String(err) }, { status: 500 });
   }
 }

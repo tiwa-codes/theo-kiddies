@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { requireAdmin, adminAuthResponse } from "@/lib/admin-auth";
 import { supabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -11,17 +11,9 @@ function sanitizeFileName(name: string): string {
   return `${base.slice(0, 50) || "image"}.${ext}`;
 }
 
-async function requireAuth() {
-  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) return;
-  const session = await auth();
-  if (!session.userId) {
-    throw new Error("Unauthorized");
-  }
-}
-
 export async function POST(req: Request) {
   try {
-    await requireAuth();
+    await requireAdmin();
 
     const formData = await req.formData();
     const file = formData.get("file");
@@ -51,8 +43,9 @@ export async function POST(req: Request) {
     const { data } = supabase.storage.from(BUCKET).getPublicUrl(key);
     return Response.json({ url: data.publicUrl }, { status: 201 });
   } catch (err) {
+    const denied = adminAuthResponse(err);
+    if (denied) return denied;
     const message = err instanceof Error ? err.message : "Image upload failed";
-    const status = message === "Unauthorized" ? 401 : 500;
-    return Response.json({ error: message }, { status });
+    return Response.json({ error: message }, { status: 500 });
   }
 }

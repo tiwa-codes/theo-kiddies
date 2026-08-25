@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { requireAdmin, adminAuthResponse } from "@/lib/admin-auth";
 import { supabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -13,13 +13,7 @@ function sanitizeFileName(name: string): string {
 
 export async function POST(req: Request) {
   try {
-    // Enforce admin auth when Clerk is configured.
-    if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
-      const session = await auth();
-      if (!session.userId) {
-        return Response.json({ error: "Unauthorized" }, { status: 401 });
-      }
-    }
+    await requireAdmin();
 
     const formData = await req.formData();
     const files = formData
@@ -57,6 +51,8 @@ export async function POST(req: Request) {
 
     return Response.json({ urls }, { status: 201 });
   } catch (err) {
+    const denied = adminAuthResponse(err);
+    if (denied) return denied;
     const message = err instanceof Error ? err.message : "Image upload failed";
     return Response.json({ error: message }, { status: 500 });
   }

@@ -1,3 +1,4 @@
+import { requireAdmin, adminAuthResponse } from "@/lib/admin-auth";
 import { supabase } from "@/lib/supabase";
 import { slugify } from "@/lib/utils";
 
@@ -6,6 +7,8 @@ export const dynamic = "force-dynamic";
 // GET /api/admin/products — list all products
 export async function GET() {
   try {
+    await requireAdmin();
+
     const { data, error } = await supabase
       .from("products")
       .select("*")
@@ -14,6 +17,8 @@ export async function GET() {
     if (error) throw error;
     return Response.json(data ?? []);
   } catch (err) {
+    const denied = adminAuthResponse(err);
+    if (denied) return denied;
     return Response.json({ error: String(err) }, { status: 500 });
   }
 }
@@ -21,6 +26,8 @@ export async function GET() {
 // POST /api/admin/products — create a new product
 export async function POST(req: Request) {
   try {
+    await requireAdmin();
+
     const body = await req.json();
 
     // Auto-generate slug from title if not provided
@@ -52,6 +59,8 @@ export async function POST(req: Request) {
     if (error) throw error;
     return Response.json(data, { status: 201 });
   } catch (err) {
+    const denied = adminAuthResponse(err);
+    if (denied) return denied;
     return Response.json({ error: String(err) }, { status: 500 });
   }
 }

@@ -1,20 +1,12 @@
-import { auth } from "@clerk/nextjs/server";
+import { requireAdmin, adminAuthResponse } from "@/lib/admin-auth";
 import { supabase } from "@/lib/supabase";
 import { HOME_HERO_KEYS } from "@/lib/site-content";
 
 export const dynamic = "force-dynamic";
 
-async function requireAuth() {
-  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) return;
-  const session = await auth();
-  if (!session.userId) {
-    throw new Error("Unauthorized");
-  }
-}
-
 export async function GET() {
   try {
-    await requireAuth();
+    await requireAdmin();
 
     const { data, error } = await supabase
       .from("site_content")
@@ -31,15 +23,16 @@ export async function GET() {
       heroImageAlt: map.get(HOME_HERO_KEYS.alt) ?? "",
     });
   } catch (err) {
+    const denied = adminAuthResponse(err);
+    if (denied) return denied;
     const message = err instanceof Error ? err.message : "Failed to fetch site content";
-    const status = message === "Unauthorized" ? 401 : 500;
-    return Response.json({ error: message }, { status });
+    return Response.json({ error: message }, { status: 500 });
   }
 }
 
 export async function PUT(req: Request) {
   try {
-    await requireAuth();
+    await requireAdmin();
 
     const body = await req.json();
     const heroImageUrl = String(body.heroImageUrl ?? "").trim();
@@ -60,8 +53,9 @@ export async function PUT(req: Request) {
 
     return Response.json({ ok: true });
   } catch (err) {
+    const denied = adminAuthResponse(err);
+    if (denied) return denied;
     const message = err instanceof Error ? err.message : "Failed to save site content";
-    const status = message === "Unauthorized" ? 401 : 500;
-    return Response.json({ error: message }, { status });
+    return Response.json({ error: message }, { status: 500 });
   }
 }

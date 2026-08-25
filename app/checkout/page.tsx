@@ -25,7 +25,17 @@ export default function CheckoutPage() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items, email }),
+        // Send only what the server is willing to trust: which product,
+        // how many, and which variant. Prices are looked up server-side.
+        body: JSON.stringify({
+          email,
+          items: items.map((i) => ({
+            slug: i.slug,
+            quantity: i.quantity,
+            color: i.color,
+            size: i.size,
+          })),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Checkout failed");

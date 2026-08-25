@@ -1,6 +1,6 @@
 import type { Category, Product } from "@/types";
 
-export const announcement = "Free nationwide delivery on orders over ₦15,000 – 2-day dispatch";
+export const announcement = "Free nationwide delivery on orders over ₦150,000 – 2-day dispatch";
 
 export const navAgeGroups = [
   { label: "0-12 Months", href: "/category/0-12-months" },

@@ -1,4 +1,4 @@
-import { ShoppingBag, ExternalLink } from "lucide-react";
+import { ShoppingBag, ExternalLink, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { supabase, type Order } from "@/lib/supabase";
 
@@ -22,6 +22,39 @@ async function getOrders(): Promise<Order[]> {
   }
 }
 
+// A to_be_quoted order needs a human to call the customer before dispatch —
+// this has to be impossible to scroll past without noticing.
+function DeliveryBadge({ order }: { order: Order }) {
+  if (order.delivery_status === "to_be_quoted") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-800">
+        <AlertTriangle className="h-3 w-3" />
+        Needs quote call
+      </span>
+    );
+  }
+  return (
+    <span className="inline-block rounded-full bg-green-100 px-2.5 py-0.5 text-[10px] font-semibold text-green-700">
+      {order.delivery_fee > 0 ? `₦${order.delivery_fee.toLocaleString("en-NG")}` : "Free"}
+    </span>
+  );
+}
+
+function ShippingAddressCell({ address }: { address: Order["shipping_address"] }) {
+  if (!address) {
+    return <span className="text-xs text-gray-400">No address on file</span>;
+  }
+  return (
+    <div className="text-xs leading-snug text-gray-600">
+      <p className="font-semibold text-gray-800">{address.fullName}</p>
+      <p>
+        {address.street}, {address.city}, {address.state}
+      </p>
+      <p className="text-gray-400">{address.phone}</p>
+    </div>
+  );
+}
+
 export const dynamic = "force-dynamic";
 
 export default async function AdminOrdersPage() {
@@ -29,6 +62,7 @@ export default async function AdminOrdersPage() {
   const totalRevenue = orders
     .filter((o) => o.status === "paid")
     .reduce((t, o) => t + o.amount, 0);
+  const needsQuoteCount = orders.filter((o) => o.delivery_status === "to_be_quoted").length;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -48,13 +82,19 @@ export default async function AdminOrdersPage() {
         </Link>
       </div>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: "Total Orders",       value: orders.length,                                   color: "bg-brand-orange/10 text-brand-orange" },
           { label: "Successful",         value: orders.filter((o) => o.status === "paid").length, color: "bg-green-100 text-green-700" },
           { label: "Refunded / Other",   value: orders.filter((o) => o.status !== "paid").length, color: "bg-gray-100 text-gray-500" },
+          { label: "Needs delivery quote", value: needsQuoteCount,                                 color: "bg-amber-100 text-amber-800" },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-2xl border border-gray-200 bg-white p-5">
+          <div
+            key={label}
+            className={`rounded-2xl border bg-white p-5 ${
+              label === "Needs delivery quote" && value > 0 ? "border-amber-300" : "border-gray-200"
+            }`}
+          >
             <p className="text-2xl font-bold text-gray-900">{value}</p>
             <p className="mt-0.5 text-sm font-medium text-gray-500">{label}</p>
             <div className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${color}`}>live data</div>
@@ -74,26 +114,41 @@ export default async function AdminOrdersPage() {
       ) : (
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
           <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full min-w-[920px] text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                 <th className="px-5 py-3">Reference</th>
                 <th className="px-5 py-3">Customer</th>
                 <th className="px-5 py-3">Amount</th>
                 <th className="px-5 py-3">Items</th>
+                <th className="px-5 py-3">Shipping address</th>
+                <th className="px-5 py-3">Delivery</th>
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3">Date</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {orders.map((order) => (
-                <tr key={order.id} className="transition hover:bg-gray-50">
+                <tr
+                  key={order.id}
+                  className={`transition ${
+                    order.delivery_status === "to_be_quoted"
+                      ? "bg-amber-50/70 hover:bg-amber-50"
+                      : "hover:bg-gray-50"
+                  }`}
+                >
                   <td className="px-5 py-3 font-mono text-xs text-gray-500">{order.reference.toUpperCase()}</td>
                   <td className="px-5 py-3 text-gray-900">{order.email}</td>
                   <td className="px-5 py-3 font-semibold text-gray-900">
                     ₦{order.amount.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
                   </td>
                   <td className="px-5 py-3 text-gray-600">{order.items.length}</td>
+                  <td className="px-5 py-3">
+                    <ShippingAddressCell address={order.shipping_address} />
+                  </td>
+                  <td className="px-5 py-3">
+                    <DeliveryBadge order={order} />
+                  </td>
                   <td className="px-5 py-3">
                     <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize ${statusStyles[order.status] ?? "bg-gray-100 text-gray-500"}`}>
                       {order.status}

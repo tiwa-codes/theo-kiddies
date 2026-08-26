@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Product } from "@/types";
+import type { ShippingAddress } from "@/lib/checkout";
 
 export type OrderItem = {
   display_name: string;
@@ -16,6 +17,11 @@ export type Order = {
   items: OrderItem[];
   status: "paid" | "failed" | "refunded";
   created_at: string;
+  shipping_address: ShippingAddress | null;
+  delivery_fee: number;
+  delivery_status: "quoted" | "to_be_quoted";
+  newsletter_opt_in: boolean;
+  newsletter_opt_in_at: string | null;
 };
 
 export type Customer = {

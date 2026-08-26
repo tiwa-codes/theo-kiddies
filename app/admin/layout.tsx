@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   Users,
   Settings,
+  Truck,
   ExternalLink,
   ChevronRight,
 } from "lucide-react";
@@ -19,6 +20,7 @@ const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard, exact: true },
   { label: "Products", href: "/admin/products", icon: Package },
   { label: "Orders", href: "/admin/orders", icon: ShoppingBag },
+  { label: "Delivery", href: "/admin/delivery", icon: Truck },
   { label: "Customers", href: "/admin/customers", icon: Users },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];

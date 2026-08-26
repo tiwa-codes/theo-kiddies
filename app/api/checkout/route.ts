@@ -4,35 +4,12 @@ import {
   parseShippingAddress,
   priceOrder,
 } from "@/lib/checkout";
-import { calculateDeliveryFee, type DeliveryRate } from "@/lib/delivery";
+import { calculateDeliveryFee } from "@/lib/delivery";
+import { getActiveDeliveryRates } from "@/lib/deliveryRates";
 import { getProductsBySlugs } from "@/lib/products";
-import { supabase } from "@/lib/supabase";
 
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY ?? "";
 const PAYSTACK_INIT_URL = "https://api.paystack.co/transaction/initialize";
-
-/**
- * Active delivery rates, looked up server-side — never trust a fee the
- * client claims. No logistics partner is chosen yet, so today this is
- * always empty and every order comes back to_be_quoted; see lib/delivery.ts.
- */
-async function getActiveDeliveryRates(): Promise<DeliveryRate[]> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return [];
-  }
-
-  const { data, error } = await supabase
-    .from("delivery_rates")
-    .select("state, fee, active")
-    .eq("active", true);
-  if (error) throw error;
-
-  return (data ?? []).map((row: { state: string; fee: number; active: boolean }) => ({
-    state: row.state,
-    fee: Number(row.fee),
-    active: Boolean(row.active),
-  }));
-}
 
 export async function POST(req: Request) {
   try {

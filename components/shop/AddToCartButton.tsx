@@ -8,6 +8,7 @@ import { useCartStore } from "@/store/cart";
 import { useWishlistStore } from "@/store/wishlist";
 import { Button } from "@/components/ui/Button";
 import { QuantitySelector } from "@/components/ui/QuantitySelector";
+import { siteConfig } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
 export function AddToCartButton({ product }: { product: Product }) {
@@ -118,7 +119,7 @@ export function AddToCartButton({ product }: { product: Product }) {
       </div>
 
       <a
-        href="https://wa.me/15551234567"
+        href={`https://wa.me/${siteConfig.whatsapp}`}
         className="inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-brand-cocoa transition hover:bg-brand-cream"
         target="_blank"
         rel="noreferrer"

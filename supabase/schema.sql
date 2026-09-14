@@ -138,3 +138,33 @@ on conflict (state) do nothing;
 -- incomplete by default, not as a successful sale — 'paid' was the
 -- wrong default for that.
 alter table orders alter column status set default 'pending';
+
+-- ============================================================
+-- Phase 2.1: catalogue schema for a real (Prokip) import
+-- ============================================================
+-- sku ties a row to its Prokip record so a re-import can upsert instead
+-- of duplicating (2.4). A plain unique constraint is fine on a nullable
+-- column — Postgres allows any number of NULLs, so hand-added admin
+-- products without a Prokip SKU are unaffected.
+--
+-- stock_quantity replaces the flattened in_stock boolean as the real
+-- inventory signal once 2.4 (import) and 4.5 (decrement on payment)
+-- exist to maintain it. in_stock stays a plain, independently-settable
+-- column for now rather than becoming `generated always as
+-- (stock_quantity > 0)` — doing that today, before anything populates
+-- stock_quantity, would silently flip every existing product to "out of
+-- stock" (default 0) and break the admin "In stock" checkbox, which
+-- writes to in_stock directly. 2.4 and 4.5 are expected to set both
+-- columns together when they actually manage real stock counts.
+alter table products
+  add column if not exists sku text unique,
+  add column if not exists stock_quantity integer not null default 0,
+  add column if not exists published boolean not null default false;
+
+create index if not exists products_published_idx on products (published);
+
+-- Existing products predate `published` and are already live — without
+-- this backfill, every one of them would vanish from the storefront the
+-- moment 2.2 starts filtering by published = true. New rows (including
+-- future Prokip imports) still default to false.
+update products set published = true where published = false;

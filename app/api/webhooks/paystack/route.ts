@@ -12,13 +12,22 @@ export async function POST(req: Request) {
     const rawBody = await req.text();
     const signature = req.headers.get("x-paystack-signature") ?? "";
 
-    // Verify signature to ensure the request is genuinely from Paystack
-    const hash = crypto
+    // Verify signature to ensure the request is genuinely from Paystack.
+    // timingSafeEqual, not !== — a string comparison short-circuits on the
+    // first mismatched byte, leaking (via response timing) how many bytes
+    // of a guessed signature were correct so far.
+    const expectedHash = crypto
       .createHmac("sha512", PAYSTACK_SECRET)
       .update(rawBody)
       .digest("hex");
+    const expectedBuffer = Buffer.from(expectedHash, "hex");
+    const signatureBuffer = Buffer.from(signature, "hex");
 
-    if (hash !== signature) {
+    const validSignature =
+      expectedBuffer.length === signatureBuffer.length &&
+      crypto.timingSafeEqual(expectedBuffer, signatureBuffer);
+
+    if (!validSignature) {
       return Response.json({ error: "Invalid signature" }, { status: 401 });
     }
 

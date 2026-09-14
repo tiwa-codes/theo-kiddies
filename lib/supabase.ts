@@ -92,6 +92,12 @@ export function dbProductToProduct(row: DbProduct): Product {
 // Lazily initialise so the build doesn't fail when env vars aren't present yet.
 let _client: SupabaseClient | null = null;
 
+/**
+ * Service-role client — bypasses RLS entirely. For admin writes, checkout,
+ * and webhooks: anything that legitimately needs to read or write past what
+ * a public policy allows. Never use this for a storefront read a browser
+ * triggers; use getSupabasePublic() instead.
+ */
 export function getSupabase(): SupabaseClient {
   if (_client) return _client;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -109,6 +115,33 @@ export function getSupabase(): SupabaseClient {
 export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
   get(_target, prop) {
     return (getSupabase() as never)[prop as keyof SupabaseClient];
+  },
+});
+
+let _publicClient: SupabaseClient | null = null;
+
+/**
+ * Anon-key client — subject to RLS, same as a request from the browser
+ * would be. For public storefront reads (products, search): the "Public
+ * can read products" policy in schema.sql is what actually authorises
+ * these, not application code deciding to trust itself.
+ */
+export function getSupabasePublic(): SupabaseClient {
+  if (_publicClient) return _publicClient;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    throw new Error(
+      "Supabase env vars missing. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
+    );
+  }
+  _publicClient = createClient(url, key);
+  return _publicClient;
+}
+
+export const supabasePublic: SupabaseClient = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    return (getSupabasePublic() as never)[prop as keyof SupabaseClient];
   },
 });
 

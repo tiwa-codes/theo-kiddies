@@ -1,20 +1,25 @@
 /**
  * Fetch products from Supabase when configured,
  * otherwise fall back to the static seed data in lib/data.ts.
+ *
+ * Uses the anon-key client, not the service-role one — these are public
+ * storefront reads, and the "Public can read products" RLS policy in
+ * schema.sql is what should be authorising them, the same as it would for
+ * a request straight from the browser. None of this needs to bypass RLS.
  */
 import { products as staticProducts } from "@/lib/data";
-import { supabase, dbProductToProduct, escapeLikePattern, type DbProduct } from "@/lib/supabase";
+import { supabasePublic, dbProductToProduct, escapeLikePattern, type DbProduct } from "@/lib/supabase";
 import type { Product } from "@/types";
 
 function hasSupabaseConfig() {
-  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 }
 
 export async function getAllProducts(): Promise<Product[]> {
   if (!hasSupabaseConfig()) return staticProducts;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabasePublic
       .from("products")
       .select("*")
       .order("created_at", { ascending: false });
@@ -33,7 +38,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabasePublic
       .from("products")
       .select("*")
       .eq("slug", slug)
@@ -61,7 +66,7 @@ export async function getProductsBySlugs(slugs: string[]): Promise<Product[]> {
     return staticProducts.filter((p) => unique.includes(p.slug));
   }
 
-  const { data, error } = await supabase.from("products").select("*").in("slug", unique);
+  const { data, error } = await supabasePublic.from("products").select("*").in("slug", unique);
   if (error) throw error;
 
   return ((data ?? []) as DbProduct[]).map(dbProductToProduct);
@@ -88,9 +93,9 @@ export async function searchProducts(query: string): Promise<Product[]> {
 
   const pattern = `%${escapeLikePattern(trimmed)}%`;
   const [byTitle, byDescription, byCategory] = await Promise.all([
-    supabase.from("products").select("*").ilike("title", pattern),
-    supabase.from("products").select("*").ilike("description", pattern),
-    supabase.from("products").select("*").ilike("category", pattern),
+    supabasePublic.from("products").select("*").ilike("title", pattern),
+    supabasePublic.from("products").select("*").ilike("description", pattern),
+    supabasePublic.from("products").select("*").ilike("category", pattern),
   ]);
 
   for (const result of [byTitle, byDescription, byCategory]) {

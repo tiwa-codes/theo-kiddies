@@ -9,10 +9,6 @@ import { StoreStory } from "@/components/sections/StoreStory";
 import { WhyShop } from "@/components/sections/WhyShop";
 import { getHomeHeroContent } from "@/lib/site-content";
 
-const Testimonials = dynamic(() => import("@/components/sections/Testimonials").then((mod) => mod.Testimonials), {
-  loading: () => <div className="mx-auto h-40 max-w-6xl rounded-2xl bg-white shimmer" />,
-});
-
 const InstagramGrid = dynamic(
   () => import("@/components/sections/InstagramGrid").then((mod) => mod.InstagramGrid),
   {
@@ -38,7 +34,6 @@ export default async function Home() {
       <PromoBanner />
       <StoreStory />
       <WhyShop />
-      <Testimonials />
       <InstagramGrid />
     </>
   );

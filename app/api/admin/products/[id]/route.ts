@@ -27,7 +27,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         colors: body.colors ?? [],
         sizes: body.sizes ?? [],
         in_stock: body.in_stock ?? true,
-        rating: body.rating ? Number(body.rating) : 5.0,
+        // Same as the create route — no fabricated perfect score.
+        rating: body.rating ? Number(body.rating) : 0,
         reviews: body.reviews ? Number(body.reviews) : 0,
         description: body.description || null,
         published: body.published ?? true,

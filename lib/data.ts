@@ -184,24 +184,6 @@ export const products: Product[] = [
   },
 ];
 
-export const testimonials = [
-  {
-    name: "Alicia M.",
-    note: "The fabrics are dreamy soft and the delivery was so fast.",
-    location: "Chicago, IL",
-  },
-  {
-    name: "Jordan P.",
-    note: "Theo Kiddies feels premium without being fussy. Love the style.",
-    location: "Austin, TX",
-  },
-  {
-    name: "Samantha R.",
-    note: "I grabbed school supplies and outfits in one cart. Perfect.",
-    location: "Charlotte, NC",
-  },
-];
-
 export const storeStoryImages = [
   {
     id: 1,

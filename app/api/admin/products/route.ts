@@ -49,7 +49,9 @@ export async function POST(req: Request) {
         colors: body.colors ?? [],
         sizes: body.sizes ?? [],
         in_stock: body.in_stock ?? true,
-        rating: body.rating ? Number(body.rating) : 5.0,
+        // A new product has no reviews yet — defaulting to a perfect 5.0
+        // was fabricated social proof, same issue as the testimonials.
+        rating: body.rating ? Number(body.rating) : 0,
         reviews: body.reviews ? Number(body.reviews) : 0,
         description: body.description || null,
         // Hand-added products default to live, matching prior behaviour —

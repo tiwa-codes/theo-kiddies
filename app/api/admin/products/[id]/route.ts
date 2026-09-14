@@ -30,6 +30,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         rating: body.rating ? Number(body.rating) : 5.0,
         reviews: body.reviews ? Number(body.reviews) : 0,
         description: body.description || null,
+        published: body.published ?? true,
       })
       .eq("id", params.id)
       .select()

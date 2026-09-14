@@ -19,13 +19,14 @@ type FormState = {
   colors: string;      // comma-separated e.g. "Coral:coral, Sage:sage"
   sizes: string;       // comma-separated e.g. "XS:xs, S:s"
   in_stock: boolean;
+  published: boolean;
   description: string;
 };
 
 const EMPTY_FORM: FormState = {
   title: "", slug: "", price: "", compare_at_price: "", badge: "",
   age_group: "Not specified", category: "Clothing",
-  images: "", colors: "", sizes: "", in_stock: true, description: "",
+  images: "", colors: "", sizes: "", in_stock: true, published: true, description: "",
 };
 
 const AGE_GROUPS = ["Not specified", "0-12 Months", "1-3 Years", "4-7 Years", "8-12 Years"];
@@ -61,6 +62,7 @@ function dbToForm(p: DbProduct): FormState {
     colors: variantsToString(p.colors),
     sizes: variantsToString(p.sizes),
     in_stock: p.in_stock,
+    published: p.published,
     description: p.description ?? "",
   };
 }
@@ -326,13 +328,14 @@ export default function AdminProductsPage() {
                 <th className="px-5 py-3">Age</th>
                 <th className="px-5 py-3">Price</th>
                 <th className="px-5 py-3">Status</th>
+                <th className="px-5 py-3">Published</th>
                 <th className="px-5 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-gray-400">
+                  <td colSpan={7} className="px-5 py-12 text-center text-gray-400">
                     {products.length === 0 ? "No products yet — click \u201cAdd product\u201d to create your first one." : "No products match your search."}
                   </td>
                 </tr>
@@ -370,6 +373,11 @@ export default function AdminProductsPage() {
                   <td className="px-5 py-3">
                     <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${product.in_stock ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
                       {product.in_stock ? "In stock" : "Out of stock"}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3">
+                    <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${product.published ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                      {product.published ? "Published" : "Draft"}
                     </span>
                   </td>
                   <td className="px-5 py-3">
@@ -595,6 +603,12 @@ export default function AdminProductsPage() {
                 <label className="flex cursor-pointer items-center gap-3">
                   <input type="checkbox" checked={form.in_stock} onChange={(e) => setField("in_stock", e.target.checked)} className="h-4 w-4 rounded accent-brand-orange" />
                   <span className="text-sm font-semibold text-gray-700">In stock</span>
+                </label>
+
+                <label className="flex cursor-pointer items-center gap-3">
+                  <input type="checkbox" checked={form.published} onChange={(e) => setField("published", e.target.checked)} className="h-4 w-4 rounded accent-brand-orange" />
+                  <span className="text-sm font-semibold text-gray-700">Published</span>
+                  <span className="text-xs font-normal text-gray-400">(visible on the storefront)</span>
                 </label>
               </div>
 

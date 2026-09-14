@@ -22,6 +22,7 @@ export async function getAllProducts(): Promise<Product[]> {
     const { data, error } = await supabasePublic
       .from("products")
       .select("*")
+      .eq("published", true)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -42,6 +43,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
       .from("products")
       .select("*")
       .eq("slug", slug)
+      .eq("published", true)
       .maybeSingle();
 
     if (error) throw error;
@@ -57,6 +59,10 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
  * prices are always read from the catalogue, never from the request body.
  * Errors propagate on purpose: an empty result must mean "not in the catalogue",
  * not "the database call failed".
+ *
+ * Deliberately not filtered by published — an item already sitting in
+ * someone's cart from before it was unpublished is a separate business
+ * question (block the sale? let it complete?) that 2.2 doesn't answer.
  */
 export async function getProductsBySlugs(slugs: string[]): Promise<Product[]> {
   const unique = Array.from(new Set(slugs));
@@ -93,9 +99,9 @@ export async function searchProducts(query: string): Promise<Product[]> {
 
   const pattern = `%${escapeLikePattern(trimmed)}%`;
   const [byTitle, byDescription, byCategory] = await Promise.all([
-    supabasePublic.from("products").select("*").ilike("title", pattern),
-    supabasePublic.from("products").select("*").ilike("description", pattern),
-    supabasePublic.from("products").select("*").ilike("category", pattern),
+    supabasePublic.from("products").select("*").eq("published", true).ilike("title", pattern),
+    supabasePublic.from("products").select("*").eq("published", true).ilike("description", pattern),
+    supabasePublic.from("products").select("*").eq("published", true).ilike("category", pattern),
   ]);
 
   for (const result of [byTitle, byDescription, byCategory]) {

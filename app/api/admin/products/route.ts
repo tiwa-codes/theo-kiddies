@@ -52,6 +52,9 @@ export async function POST(req: Request) {
         rating: body.rating ? Number(body.rating) : 5.0,
         reviews: body.reviews ? Number(body.reviews) : 0,
         description: body.description || null,
+        // Hand-added products default to live, matching prior behaviour —
+        // unlike a Prokip import, which starts every row unpublished for review.
+        published: body.published ?? true,
       })
       .select()
       .single();

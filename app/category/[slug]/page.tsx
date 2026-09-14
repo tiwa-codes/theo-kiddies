@@ -6,6 +6,11 @@ import { ProductCard } from "@/components/shop/ProductCard";
 import { Container } from "@/components/ui/Container";
 import { getAllProducts } from "@/lib/products";
 
+// Without this, Next's fetch cache serves stale results — a product's
+// published/in-stock/price change wouldn't show up until something else
+// happened to invalidate the cache. Found while verifying 2.2.
+export const dynamic = "force-dynamic";
+
 const categoryMap: Record<string, string> = {
   "0-12-months": "0-12 Months",
   "1-3-years": "1-3 Years",

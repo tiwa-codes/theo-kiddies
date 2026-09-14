@@ -67,6 +67,9 @@ export type DbProduct = {
   reviews: number;
   description: string | null;
   created_at: string;
+  sku: string | null;
+  stock_quantity: number;
+  published: boolean;
 };
 
 /** Convert a Supabase row → the Product type used across the storefront */

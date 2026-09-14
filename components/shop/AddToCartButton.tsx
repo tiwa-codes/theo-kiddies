@@ -12,23 +12,33 @@ import { siteConfig } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
 export function AddToCartButton({ product }: { product: Product }) {
-  const [selectedColor, setSelectedColor] = useState(product.colors[0]?.id ?? "");
-  const [selectedSize, setSelectedSize] = useState(product.sizes[0]?.id ?? "");
+  // No preselection: a parent picking "Add to cart" without ever looking
+  // at the size selector should not be possible when sizes exist.
+  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
   const addItem = useCartStore((s) => s.addItem);
   const { toggle, has } = useWishlistStore();
   const router = useRouter();
   const isSaved = has(product.id);
 
+  const colorRequired = product.colors.length > 0;
+  const sizeRequired = product.sizes.length > 0;
+  const canAdd =
+    product.inStock && (!colorRequired || selectedColor) && (!sizeRequired || selectedSize);
+
   function handleAdd() {
+    if (!canAdd) return;
     addItem({
       id: `${product.id}-${selectedColor}-${selectedSize}`,
       slug: product.slug,
       title: product.title,
       price: product.price,
       image: product.images[0],
-      color: selectedColor,
-      size: selectedSize,
+      color: selectedColor || undefined,
+      colorLabel: product.colors.find((c) => c.id === selectedColor)?.label,
+      size: selectedSize || undefined,
+      sizeLabel: product.sizes.find((s) => s.id === selectedSize)?.label,
       quantity,
     });
   }
@@ -104,16 +114,21 @@ export function AddToCartButton({ product }: { product: Product }) {
         </div>
       </div>
 
+      {product.inStock && !canAdd && (
+        <p className="text-xs font-semibold text-brand-orange">
+          {colorRequired && !selectedColor && sizeRequired && !selectedSize
+            ? "Please select a color and size."
+            : colorRequired && !selectedColor
+              ? "Please select a color."
+              : "Please select a size."}
+        </p>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-2">
-        <Button size="lg" onClick={handleAdd} disabled={!product.inStock}>
+        <Button size="lg" onClick={handleAdd} disabled={!canAdd}>
           Add to cart
         </Button>
-        <Button
-          size="lg"
-          variant="secondary"
-          onClick={handleBuyNow}
-          disabled={!product.inStock}
-        >
+        <Button size="lg" variant="secondary" onClick={handleBuyNow} disabled={!canAdd}>
           Buy now
         </Button>
       </div>

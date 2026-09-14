@@ -89,8 +89,12 @@ export default function CheckoutPage() {
           items: items.map((i) => ({
             slug: i.slug,
             quantity: i.quantity,
-            color: i.color,
-            size: i.size,
+            // Prefer the human-readable label — this is what ends up on the
+            // order row and in the confirmation email, and "coral" isn't
+            // useful there. Falls back to the id for carts saved before
+            // labels existed.
+            color: i.colorLabel ?? i.color,
+            size: i.sizeLabel ?? i.size,
           })),
           address: {
             fullName,
@@ -294,7 +298,9 @@ export default function CheckoutPage() {
                     <div className="min-w-0">
                       <p className="font-semibold text-brand-cocoa">{item.title}</p>
                       <span className="text-xs text-brand-cocoa/70">
-                    {item.color && `${item.color} · `}{item.size && `${item.size} · `}Qty {item.quantity}
+                    {(item.colorLabel ?? item.color) && `${item.colorLabel ?? item.color} · `}
+                    {(item.sizeLabel ?? item.size) && `${item.sizeLabel ?? item.size} · `}
+                    Qty {item.quantity}
                   </span>
                     </div>
                     <span className="whitespace-nowrap">

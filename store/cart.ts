@@ -8,8 +8,10 @@ export type CartItem = {
   price: number;
   image: string;
   quantity: number;
-  color?: string;
+  color?: string; // variant id, e.g. "coral" — used only for the composite key above
+  colorLabel?: string; // human-readable, e.g. "Warm Coral" — used everywhere this is displayed or sent on
   size?: string;
+  sizeLabel?: string;
 };
 
 type CartStore = {

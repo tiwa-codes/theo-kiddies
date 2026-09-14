@@ -7,12 +7,20 @@ import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { Input } from "@/components/ui/Input";
 
+type OrderLineItem = {
+  title: string;
+  quantity: number;
+  lineTotal: number;
+  size?: string;
+  color?: string;
+};
+
 type OrderResult = {
   reference: string;
-  status: "paid" | "failed" | "refunded";
+  status: "pending" | "paid" | "failed" | "refunded";
   amount: number;
   currency: string;
-  items: { display_name: string; value: string }[];
+  items: OrderLineItem[];
   shippingAddress: {
     fullName: string;
     street: string;
@@ -25,6 +33,7 @@ type OrderResult = {
 };
 
 const statusStyles: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-800",
   paid: "bg-green-100 text-green-700",
   failed: "bg-red-100 text-red-600",
   refunded: "bg-gray-100 text-gray-500",
@@ -147,8 +156,16 @@ export default function OrderLookupPage() {
               <div className="mt-4 space-y-2 border-t border-brand-orange/10 pt-4">
                 {order.items.map((item, i) => (
                   <div key={i} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-brand-cocoa">{item.display_name}</span>
-                    <span className="whitespace-nowrap text-brand-cocoa/60">{item.value}</span>
+                    <span className="text-brand-cocoa">
+                      {item.title}
+                      <span className="text-brand-cocoa/60">
+                        {item.size ? ` · ${item.size}` : ""}
+                        {item.color ? ` · ${item.color}` : ""} · Qty {item.quantity}
+                      </span>
+                    </span>
+                    <span className="whitespace-nowrap text-brand-cocoa/60">
+                      ₦{item.lineTotal.toLocaleString("en-NG")}
+                    </span>
                   </div>
                 ))}
               </div>

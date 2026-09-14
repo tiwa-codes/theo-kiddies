@@ -127,3 +127,14 @@ insert into delivery_rates (state) values
   ('Oyo'), ('Plateau'), ('Rivers'), ('Sokoto'), ('Taraba'),
   ('Yobe'), ('Zamfara')
 on conflict (state) do nothing;
+
+-- ============================================================
+-- Cleanup 4.4: structured order line items
+-- ============================================================
+-- The checkout API now writes the full order row itself at 'pending'
+-- (structured items, address, delivery info) before Paystack ever sees
+-- the reference; the webhook only flips status to 'paid'. A row that
+-- exists but was never finished by the webhook should read as
+-- incomplete by default, not as a successful sale — 'paid' was the
+-- wrong default for that.
+alter table orders alter column status set default 'pending';

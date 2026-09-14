@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { supabase } from "@/lib/supabase";
+import { supabase, type OrderItem, type OrderLineItem } from "@/lib/supabase";
 import { sendOrderConfirmation } from "@/lib/email";
 
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY ?? "";
@@ -25,53 +25,36 @@ export async function POST(req: Request) {
     const event = JSON.parse(rawBody);
 
     if (event.event === "charge.success") {
-      const { reference, amount, currency, customer, metadata, paid_at } = event.data;
-      const email: string = customer.email;
-      const amountDecimal: number = amount / 100;
-      const items = metadata?.custom_fields ?? [];
+      const { reference } = event.data;
 
-      // Set by app/api/checkout/route.ts under a single metadata key (not
-      // custom_fields — see that route for why). Missing on any order that
-      // predates this, or that didn't go through our own checkout API.
-      const orderDetails = metadata?.order_details ?? null;
-      const shippingAddress = orderDetails?.shipping_address ?? null;
-      const deliveryFee: number =
-        typeof orderDetails?.delivery_fee === "number" ? orderDetails.delivery_fee : 0;
-      const deliveryStatus: "quoted" | "to_be_quoted" =
-        orderDetails?.delivery_status === "quoted" ? "quoted" : "to_be_quoted";
-      const newsletterOptIn = Boolean(shippingAddress?.newsletterOptIn);
-      // Paystack's own event timestamp, not `new Date()` — Paystack can
-      // redeliver the same webhook, and the upsert below would otherwise
-      // re-stamp consent with a fresh time on every redelivery.
-      const newsletterOptInAt = newsletterOptIn ? paid_at ?? new Date().toISOString() : null;
+      // app/api/checkout/route.ts writes the full order row itself — items,
+      // address, delivery info — before Paystack ever sees this reference.
+      // That row is the source of truth; this webhook's only job is to flip
+      // it to 'paid'. Paystack's own event data isn't used for anything else.
+      const { data: order, error: updateError } = await supabase
+        .from("orders")
+        .update({ status: "paid" })
+        .eq("reference", reference)
+        .select()
+        .maybeSingle();
 
-      // 1. Save order to Supabase (ignore duplicate references)
-      const { error: orderError } = await supabase.from("orders").upsert(
-        {
-          reference,
-          amount: amountDecimal,
-          currency: currency ?? "NGN",
-          email,
-          items,
-          status: "paid",
-          shipping_address: shippingAddress,
-          delivery_fee: deliveryFee,
-          delivery_status: deliveryStatus,
-          newsletter_opt_in: newsletterOptIn,
-          newsletter_opt_in_at: newsletterOptInAt,
-        },
-        { onConflict: "reference" }
-      );
-
-      if (orderError) {
-        console.error("Supabase order save error:", orderError);
+      if (updateError) {
+        console.error("Failed to mark order paid:", updateError);
+        return Response.json({ received: true });
+      }
+      if (!order) {
+        // Should be unreachable in normal operation — every reference we
+        // hand Paystack was inserted at checkout first. Surfacing it
+        // rather than silently reconstructing a row from Paystack's data.
+        console.error("Webhook for a reference with no matching order:", reference);
+        return Response.json({ received: true });
       }
 
-      // 2. Upsert customer record (increment order_count + total_spent)
+      // Upsert customer record (increment order_count + total_spent)
       const { data: existingCustomer } = await supabase
         .from("customers")
         .select("order_count, total_spent")
-        .eq("email", email)
+        .eq("email", order.email)
         .maybeSingle();
 
       if (existingCustomer) {
@@ -79,31 +62,45 @@ export async function POST(req: Request) {
           .from("customers")
           .update({
             order_count: existingCustomer.order_count + 1,
-            total_spent: existingCustomer.total_spent + amountDecimal,
+            total_spent: existingCustomer.total_spent + order.amount,
             last_seen: new Date().toISOString(),
           })
-          .eq("email", email);
+          .eq("email", order.email);
       } else {
         await supabase.from("customers").insert({
-          email,
+          email: order.email,
           order_count: 1,
-          total_spent: amountDecimal,
+          total_spent: order.amount,
         });
       }
 
-      // 3. Send order confirmation email via Resend
+      // Confirmation email — display strings derived from our own
+      // structured line items, not from anything Paystack echoed back.
+      const emailItems: OrderItem[] = ((order.items ?? []) as OrderLineItem[]).map((item) => ({
+        display_name: item.title,
+        variable_name: item.slug,
+        value: [
+          `Qty ${item.quantity}`,
+          item.size ? `Size ${item.size}` : null,
+          item.color ? `Colour ${item.color}` : null,
+          `₦${item.lineTotal.toLocaleString("en-NG")}`,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      }));
+
       await sendOrderConfirmation({
-        email,
-        reference,
-        amount: amountDecimal,
-        currency: currency ?? "NGN",
-        items,
-        shippingAddress,
-        deliveryFee,
-        deliveryStatus,
+        email: order.email,
+        reference: order.reference,
+        amount: order.amount,
+        currency: order.currency,
+        items: emailItems,
+        shippingAddress: order.shipping_address,
+        deliveryFee: order.delivery_fee,
+        deliveryStatus: order.delivery_status,
       });
 
-      console.log("✅ Order saved + email sent:", { reference, email, amount: amountDecimal });
+      console.log("✅ Order marked paid + email sent:", { reference, email: order.email });
     }
 
     // Always return 200 so Paystack stops retrying

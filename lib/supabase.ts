@@ -2,10 +2,26 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Product } from "@/types";
 import type { ShippingAddress } from "@/lib/checkout";
 
+// Legacy display-string shape — still used for the confirmation email and
+// Paystack's cosmetic custom_fields, but no longer what's stored on orders.
 export type OrderItem = {
   display_name: string;
   variable_name: string;
   value: string;
+};
+
+// What's actually stored in orders.items: numeric quantities and product
+// IDs, written by the checkout API itself rather than echoed back from
+// Paystack metadata.
+export type OrderLineItem = {
+  productId: string;
+  slug: string;
+  title: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  size?: string;
+  color?: string;
 };
 
 export type Order = {
@@ -14,8 +30,8 @@ export type Order = {
   amount: number;
   currency: string;
   email: string;
-  items: OrderItem[];
-  status: "paid" | "failed" | "refunded";
+  items: OrderLineItem[];
+  status: "pending" | "paid" | "failed" | "refunded";
   created_at: string;
   shipping_address: ShippingAddress | null;
   delivery_fee: number;

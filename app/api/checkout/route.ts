@@ -7,6 +7,7 @@ import {
 import { calculateDeliveryFee } from "@/lib/delivery";
 import { getActiveDeliveryRates } from "@/lib/deliveryRates";
 import { getProductsBySlugs } from "@/lib/products";
+import { supabase, type OrderLineItem } from "@/lib/supabase";
 
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY ?? "";
 const PAYSTACK_INIT_URL = "https://api.paystack.co/transaction/initialize";
@@ -33,6 +34,45 @@ export async function POST(req: Request) {
       rates,
     });
     const amountKobo = priced.amountKobo + Math.round(delivery.fee * 100);
+    const currency = process.env.PAYSTACK_CURRENCY ?? "NGN";
+
+    // Our own reference, generated before Paystack ever sees this order —
+    // it's what ties the eventual webhook back to the row written below.
+    const reference = crypto.randomUUID();
+
+    const catalogBySlug = new Map(catalog.map((product) => [product.slug, product]));
+    const lineItems: OrderLineItem[] = priced.lines.map((line) => {
+      const product = catalogBySlug.get(line.slug)!;
+      return {
+        productId: product.id,
+        slug: line.slug,
+        title: line.title,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
+        lineTotal: line.lineTotal,
+        ...(line.color ? { color: line.color } : {}),
+        ...(line.size ? { size: line.size } : {}),
+      };
+    });
+
+    // Write the order ourselves, before Paystack — the webhook only flips
+    // this row's status to 'paid'. Paystack's metadata carries a
+    // reference, not our data: no size ceiling to hit, nothing to trust
+    // an echo for.
+    const { error: insertError } = await supabase.from("orders").insert({
+      reference,
+      amount: amountKobo / 100,
+      currency,
+      email: address.email,
+      items: lineItems,
+      status: "pending",
+      shipping_address: address,
+      delivery_fee: delivery.fee,
+      delivery_status: delivery.status,
+      newsletter_opt_in: address.newsletterOptIn,
+      newsletter_opt_in_at: address.newsletterOptIn ? new Date().toISOString() : null,
+    });
+    if (insertError) throw insertError;
 
     const baseUrl = process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000";
 
@@ -45,9 +85,12 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         email: address.email,
         amount: amountKobo,
-        currency: process.env.PAYSTACK_CURRENCY ?? "NGN",
+        currency,
+        reference,
         callback_url: `${baseUrl}/order-confirmation`,
         metadata: {
+          // Cosmetic only — shown on Paystack's own hosted checkout page,
+          // never read back. The order row above is the source of truth.
           custom_fields: priced.lines.map((line) => ({
             display_name: line.title,
             variable_name: line.slug,
@@ -60,14 +103,6 @@ export async function POST(req: Request) {
               .filter(Boolean)
               .join(" · "),
           })),
-          // A single key, not custom_fields — custom_fields is for short
-          // display strings and has a size ceiling; the webhook reads the
-          // full address back out of here to persist it on the order.
-          order_details: {
-            shipping_address: address,
-            delivery_fee: delivery.fee,
-            delivery_status: delivery.status,
-          },
         },
       }),
     });
@@ -80,7 +115,7 @@ export async function POST(req: Request) {
 
     return Response.json({
       url: data.data.authorization_url,
-      reference: data.data.reference,
+      reference,
       // Echoed back so the client can show the authoritative total before payment.
       subtotal: priced.subtotalNaira,
       deliveryFee: delivery.fee,

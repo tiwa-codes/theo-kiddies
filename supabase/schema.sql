@@ -168,3 +168,25 @@ create index if not exists products_published_idx on products (published);
 -- moment 2.2 starts filtering by published = true. New rows (including
 -- future Prokip imports) still default to false.
 update products set published = true where published = false;
+
+-- ============================================================
+-- Phase 4.5: atomic stock decrement on payment
+-- ============================================================
+-- A plain read-then-write from the webhook (SELECT stock_quantity, then
+-- UPDATE with the computed value) has a race: two webhooks for the same
+-- product's last unit can both read "1 in stock" before either writes
+-- back 0, and both sales go through. This function does the decrement
+-- and the floor-at-zero in one UPDATE, computed from the row's current
+-- value at write time — Postgres's row lock during the UPDATE makes it
+-- atomic against a concurrent call for the same product, which a
+-- supabase-js .update({stock_quantity: someJsNumber}) can't be, since
+-- that always sends a literal value, never a SQL expression.
+create or replace function decrement_product_stock(p_id uuid, qty integer)
+returns void
+language sql
+as $$
+  update products
+  set stock_quantity = greatest(stock_quantity - qty, 0),
+      in_stock = greatest(stock_quantity - qty, 0) > 0
+  where id = p_id;
+$$;

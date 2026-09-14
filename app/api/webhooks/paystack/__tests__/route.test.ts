@@ -12,13 +12,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * models that: `orderRow` is what "the database" already has, and the
  * webhook's job is only to flip it to 'paid' and read it back, never to
  * reconstruct order data from the Paystack event itself.
+ *
+ * The orders mock also models the .neq("status", "paid") guard added in
+ * 4.5: the update only "succeeds" (returns a row) when the stored status
+ * isn't already "paid" — so a redelivered webhook naturally sees no row,
+ * the same as the real query would.
  */
 
 const SECRET = "test_paystack_secret";
 
-const { orderRow, updatePatches, emailCalls } = vi.hoisted(() => ({
+const { orderRow, updatePatches, rpcCalls, emailCalls } = vi.hoisted(() => ({
   orderRow: { current: null as null | Record<string, unknown> },
   updatePatches: [] as unknown[],
+  rpcCalls: [] as Array<{ fn: string; params: unknown }>,
   emailCalls: [] as unknown[],
 }));
 
@@ -29,17 +35,28 @@ vi.mock("@/lib/supabase", () => ({
         return {
           update: (patch: Record<string, unknown>) => ({
             eq: (_col: string, ref: string) => ({
-              select: () => ({
-                maybeSingle: () => {
-                  updatePatches.push(patch);
-                  const row = orderRow.current;
-                  if (!row || row.reference !== ref) {
-                    return Promise.resolve({ data: null, error: null });
-                  }
-                  Object.assign(row, patch);
-                  return Promise.resolve({ data: row, error: null });
-                },
+              neq: (_col2: string, excludedStatus: string) => ({
+                select: () => ({
+                  maybeSingle: () => {
+                    const row = orderRow.current;
+                    if (!row || row.reference !== ref || row.status === excludedStatus) {
+                      return Promise.resolve({ data: null, error: null });
+                    }
+                    updatePatches.push(patch);
+                    Object.assign(row, patch);
+                    return Promise.resolve({ data: { ...row }, error: null });
+                  },
+                }),
               }),
+            }),
+          }),
+          select: () => ({
+            eq: (_col: string, ref: string) => ({
+              maybeSingle: () => {
+                const row = orderRow.current;
+                if (!row || row.reference !== ref) return Promise.resolve({ data: null, error: null });
+                return Promise.resolve({ data: { id: "order-1" }, error: null });
+              },
             }),
           }),
         };
@@ -56,6 +73,10 @@ vi.mock("@/lib/supabase", () => ({
         };
       }
       throw new Error(`Unexpected table in test: ${table}`);
+    },
+    rpc: (fn: string, params: unknown) => {
+      rpcCalls.push({ fn, params });
+      return Promise.resolve({ error: null });
     },
   },
 }));
@@ -131,6 +152,7 @@ describe("POST /api/webhooks/paystack — flips an existing order to paid (4.4)"
     process.env.PAYSTACK_SECRET_KEY = SECRET;
     orderRow.current = pendingOrder();
     updatePatches.length = 0;
+    rpcCalls.length = 0;
     emailCalls.length = 0;
   });
 
@@ -176,6 +198,7 @@ describe("POST /api/webhooks/paystack — flips an existing order to paid (4.4)"
     const res = await POST(signedRequest(chargeSuccessPayload()));
     expect(res.status).toBe(200);
     expect(emailCalls).toHaveLength(0);
+    expect(rpcCalls).toHaveLength(0);
   });
 
   it("rejects a request with an invalid signature", async () => {
@@ -189,5 +212,53 @@ describe("POST /api/webhooks/paystack — flips an existing order to paid (4.4)"
     );
     expect(res.status).toBe(401);
     expect(emailCalls).toHaveLength(0);
+  });
+});
+
+describe("POST /api/webhooks/paystack — stock decrement on payment (4.5)", () => {
+  beforeEach(() => {
+    process.env.PAYSTACK_SECRET_KEY = SECRET;
+    updatePatches.length = 0;
+    rpcCalls.length = 0;
+    emailCalls.length = 0;
+  });
+
+  afterEach(() => {
+    vi.resetModules();
+  });
+
+  it("decrements stock for the purchased product via the atomic RPC function", async () => {
+    orderRow.current = pendingOrder();
+    const { POST } = await import("@/app/api/webhooks/paystack/route");
+    await POST(signedRequest(chargeSuccessPayload()));
+
+    expect(rpcCalls).toEqual([{ fn: "decrement_product_stock", params: { p_id: "prod-1", qty: 2 } }]);
+  });
+
+  it("aggregates quantities when the same product appears in multiple line items", async () => {
+    orderRow.current = pendingOrder({
+      items: [
+        { productId: "prod-1", slug: "a", title: "A", quantity: 1, unitPrice: 1000, lineTotal: 1000 },
+        { productId: "prod-1", slug: "a", title: "A", quantity: 3, unitPrice: 1000, lineTotal: 3000, size: "l" },
+        { productId: "prod-2", slug: "b", title: "B", quantity: 1, unitPrice: 500, lineTotal: 500 },
+      ],
+    });
+    const { POST } = await import("@/app/api/webhooks/paystack/route");
+    await POST(signedRequest(chargeSuccessPayload()));
+
+    expect(rpcCalls).toHaveLength(2);
+    expect(rpcCalls).toContainEqual({ fn: "decrement_product_stock", params: { p_id: "prod-1", qty: 4 } });
+    expect(rpcCalls).toContainEqual({ fn: "decrement_product_stock", params: { p_id: "prod-2", qty: 1 } });
+  });
+
+  it("does not decrement stock or resend the email on a redelivered webhook for an already-paid order", async () => {
+    orderRow.current = pendingOrder({ status: "paid" });
+    const { POST } = await import("@/app/api/webhooks/paystack/route");
+    const res = await POST(signedRequest(chargeSuccessPayload()));
+
+    expect(res.status).toBe(200);
+    expect(rpcCalls).toHaveLength(0);
+    expect(emailCalls).toHaveLength(0);
+    expect(updatePatches).toHaveLength(0);
   });
 });

@@ -40,10 +40,16 @@ export async function POST(req: Request) {
       // address, delivery info — before Paystack ever sees this reference.
       // That row is the source of truth; this webhook's only job is to flip
       // it to 'paid'. Paystack's own event data isn't used for anything else.
+      //
+      // .neq("status", "paid") makes this only match a genuine pending →
+      // paid transition — Paystack can and does redeliver webhooks, and
+      // without this guard a redelivery would re-decrement stock (double-
+      // counting one sale) and re-send the confirmation email below.
       const { data: order, error: updateError } = await supabase
         .from("orders")
         .update({ status: "paid" })
         .eq("reference", reference)
+        .neq("status", "paid")
         .select()
         .maybeSingle();
 
@@ -52,11 +58,38 @@ export async function POST(req: Request) {
         return Response.json({ received: true });
       }
       if (!order) {
-        // Should be unreachable in normal operation — every reference we
-        // hand Paystack was inserted at checkout first. Surfacing it
-        // rather than silently reconstructing a row from Paystack's data.
-        console.error("Webhook for a reference with no matching order:", reference);
+        // No row matched — either no such reference at all, or it was
+        // already paid (a redelivery, which is normal and not worth
+        // logging). Only the first case is a genuine anomaly.
+        const { data: existing } = await supabase
+          .from("orders")
+          .select("id")
+          .eq("reference", reference)
+          .maybeSingle();
+        if (!existing) {
+          console.error("Webhook for a reference with no matching order:", reference);
+        }
         return Response.json({ received: true });
+      }
+
+      // Decrement stock per line item, atomically per product via the SQL
+      // function so two webhooks for the same product's last unit can't
+      // both succeed — a plain read-then-write from here would have a
+      // race window. Best-effort beyond that: the weekly Prokip re-import
+      // corrects any drift, so this doesn't need to be perfect, just safe
+      // against a double sale.
+      const quantityByProduct = new Map<string, number>();
+      for (const item of (order.items ?? []) as OrderLineItem[]) {
+        quantityByProduct.set(item.productId, (quantityByProduct.get(item.productId) ?? 0) + item.quantity);
+      }
+      for (const [productId, quantity] of quantityByProduct) {
+        const { error: stockError } = await supabase.rpc("decrement_product_stock", {
+          p_id: productId,
+          qty: quantity,
+        });
+        if (stockError) {
+          console.error("Failed to decrement stock for product", productId, stockError);
+        }
       }
 
       // Upsert customer record (increment order_count + total_spent)

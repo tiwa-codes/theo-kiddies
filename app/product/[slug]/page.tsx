@@ -11,6 +11,11 @@ import { Badge } from "@/components/ui/Badge";
 import { Container } from "@/components/ui/Container";
 import { getProductBySlug, getAllProducts } from "@/lib/products";
 
+// Same fetch-cache staleness as category/[slug] (2.2) and search (4.7) —
+// a stock or price change wouldn't show up without this. Found while
+// verifying 4.5 (buy the last unit, confirm it now reads out of stock).
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const product = await getProductBySlug(params.slug);
   if (!product) return { title: "Product" };

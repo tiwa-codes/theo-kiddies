@@ -3,7 +3,7 @@
  * otherwise fall back to the static seed data in lib/data.ts.
  */
 import { products as staticProducts } from "@/lib/data";
-import { supabase, dbProductToProduct, type DbProduct } from "@/lib/supabase";
+import { supabase, dbProductToProduct, escapeLikePattern, type DbProduct } from "@/lib/supabase";
 import type { Product } from "@/types";
 
 function hasSupabaseConfig() {
@@ -65,4 +65,44 @@ export async function getProductsBySlugs(slugs: string[]): Promise<Product[]> {
   if (error) throw error;
 
   return ((data ?? []) as DbProduct[]).map(dbProductToProduct);
+}
+
+/**
+ * Real search across title, description and category — not scoped to a
+ * single category page. Three separate .ilike() calls merged in JS rather
+ * than one hand-built .or() filter string: PostgREST's or() syntax treats
+ * commas and parentheses as structural, so a search term containing them
+ * would either break the query or need its own escaping on top of
+ * escapeLikePattern's.
+ */
+export async function searchProducts(query: string): Promise<Product[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  if (!hasSupabaseConfig()) {
+    const q = trimmed.toLowerCase();
+    return staticProducts.filter(
+      (p) => p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
+    );
+  }
+
+  const pattern = `%${escapeLikePattern(trimmed)}%`;
+  const [byTitle, byDescription, byCategory] = await Promise.all([
+    supabase.from("products").select("*").ilike("title", pattern),
+    supabase.from("products").select("*").ilike("description", pattern),
+    supabase.from("products").select("*").ilike("category", pattern),
+  ]);
+
+  for (const result of [byTitle, byDescription, byCategory]) {
+    if (result.error) throw result.error;
+  }
+
+  const byId = new Map<string, DbProduct>();
+  for (const result of [byTitle, byDescription, byCategory]) {
+    for (const row of (result.data ?? []) as DbProduct[]) {
+      byId.set(row.id, row);
+    }
+  }
+
+  return Array.from(byId.values()).map(dbProductToProduct);
 }

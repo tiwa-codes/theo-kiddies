@@ -55,7 +55,7 @@ export function Header() {
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/category/clothing?q=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchOpen(false);
     }
   }
@@ -233,7 +233,7 @@ export function Header() {
             type="button"
             className="rounded-full border border-brand-orange/10 p-2 lg:hidden"
             aria-label="Open search"
-            onClick={() => router.push("/category/clothing")}
+            onClick={() => router.push("/search")}
           >
             <Search className="h-4 w-4" />
           </button>

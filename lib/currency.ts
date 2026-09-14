@@ -1,34 +1,15 @@
-import type { Currency } from "@/store/currency";
-
-/** Approximate exchange rates: 1 NGN = x foreign currency */
-export const RATES: Record<Currency, number> = {
-  NGN: 1,
-  USD: 1 / 1650,
-  GBP: 1 / 2100,
-  EUR: 1 / 1800,
-};
-
-export const SYMBOLS: Record<Currency, string> = {
-  NGN: "₦",
-  USD: "$",
-  GBP: "£",
-  EUR: "€",
-};
-
-export const LOCALES: Record<Currency, string> = {
-  NGN: "en-NG",
-  USD: "en-US",
-  GBP: "en-GB",
-  EUR: "de-DE",
-};
-
-/** Convert a NGN price to the given currency and format it */
-export function formatPrice(ngnAmount: number, currency: Currency): string {
-  const converted = ngnAmount * RATES[currency];
-  return new Intl.NumberFormat(LOCALES[currency], {
+/**
+ * Naira formatting — the only currency Theo Kiddies charges in. A
+ * multi-currency selector used to live here, converting via hardcoded
+ * exchange rates that drifted from reality while checkout always charged
+ * in ₦ regardless of what was displayed. Removed rather than labelled
+ * "approximate" — simpler to be correct than to caveat being wrong.
+ */
+export function formatPrice(ngnAmount: number): string {
+  return new Intl.NumberFormat("en-NG", {
     style: "currency",
-    currency,
-    minimumFractionDigits: currency === "NGN" ? 0 : 2,
-    maximumFractionDigits: currency === "NGN" ? 0 : 2,
-  }).format(converted);
+    currency: "NGN",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(ngnAmount);
 }

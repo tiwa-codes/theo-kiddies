@@ -11,7 +11,6 @@ import { Container } from "@/components/ui/Container";
 import { Drawer } from "@/components/ui/Drawer";
 import { Input } from "@/components/ui/Input";
 import { CartDrawer } from "@/components/cart/CartDrawer";
-import { CurrencySelector } from "@/components/layout/CurrencySelector";
 import { useCartStore } from "@/store/cart";
 import { cn } from "@/lib/utils";
 
@@ -194,9 +193,6 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="hidden sm:block">
-            <CurrencySelector />
-          </div>
           <div ref={searchRef} className="relative hidden lg:block">
             <form onSubmit={handleSearchSubmit}>
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-cocoa/50" />
@@ -272,14 +268,6 @@ export function Header() {
             </button>
           </div>
           <div className="space-y-6">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
-                Currency
-              </p>
-              <div className="mt-3 max-w-[180px]">
-                <CurrencySelector />
-              </div>
-            </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
                 Shop by Age

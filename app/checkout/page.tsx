@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/Input";
 import { formatPrice } from "@/lib/currency";
 import { NIGERIAN_STATES } from "@/lib/nigeria";
 import { useCartStore } from "@/store/cart";
-import { useCurrencyStore } from "@/store/currency";
 
 type DeliveryQuote = {
   fee: number;
@@ -23,7 +22,6 @@ const fieldClass =
 
 export default function CheckoutPage() {
   const items = useCartStore((s) => s.items);
-  const { currency } = useCurrencyStore();
   const subtotal = items.reduce((t, i) => t + i.price * i.quantity, 0);
 
   const [fullName, setFullName] = useState("");
@@ -304,7 +302,7 @@ export default function CheckoutPage() {
                   </span>
                     </div>
                     <span className="whitespace-nowrap">
-                      {formatPrice(item.price * item.quantity, currency)}
+                      {formatPrice(item.price * item.quantity)}
                     </span>
                   </div>
                 ))}
@@ -312,7 +310,7 @@ export default function CheckoutPage() {
               <div className="mt-6 border-t border-brand-orange/10 pt-4 text-sm">
                 <div className="flex items-center justify-between">
                   <span>Subtotal</span>
-                  <span>{formatPrice(subtotal, currency)}</span>
+                  <span>{formatPrice(subtotal)}</span>
                 </div>
                 <div className="mt-2 flex items-start justify-between gap-3 text-brand-cocoa/60">
                   <span>Shipping</span>
@@ -326,7 +324,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="mt-4 flex items-center justify-between text-base font-semibold">
                   <span>Total</span>
-                  <span>{formatPrice(total, currency)}</span>
+                  <span>{formatPrice(total)}</span>
                 </div>
               </div>
               <div className="mt-6 rounded-2xl bg-brand-cream p-4 text-xs text-brand-cocoa/70">

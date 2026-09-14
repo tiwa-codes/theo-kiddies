@@ -95,3 +95,14 @@ export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
     return (getSupabase() as never)[prop as keyof SupabaseClient];
   },
 });
+
+/**
+ * Escape ilike's wildcard characters in untrusted input before passing it
+ * to `.ilike()`. Without this, a value of "%" matches every row — turning
+ * "I know someone's email" into "I can see all of their orders" without
+ * ever knowing a single valid reference. Use whenever user input drives a
+ * case-insensitive exact-match lookup, not a real search.
+ */
+export function escapeLikePattern(value: string): string {
+  return value.replace(/[%_\\]/g, (char) => `\\${char}`);
+}

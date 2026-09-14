@@ -16,14 +16,19 @@ export function FilterSidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  // "|" not "," — several option values (the price bands) contain commas
+  // themselves as thousands separators, which silently corrupted the
+  // multi-select round-trip when "," doubled as both the delimiter and
+  // part of a value. Found while pushing price-band filtering into the
+  // Supabase query for 2.3.
   function toggle(param: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
-    const current = params.get(param)?.split(",").filter(Boolean) ?? [];
+    const current = params.get(param)?.split("|").filter(Boolean) ?? [];
     const next = current.includes(value)
       ? current.filter((v) => v !== value)
       : [...current, value];
     if (next.length) {
-      params.set(param, next.join(","));
+      params.set(param, next.join("|"));
     } else {
       params.delete(param);
     }
@@ -31,7 +36,7 @@ export function FilterSidebar() {
   }
 
   function isChecked(param: string, value: string) {
-    return searchParams.get(param)?.split(",").includes(value) ?? false;
+    return searchParams.get(param)?.split("|").includes(value) ?? false;
   }
 
   function clearAll() {

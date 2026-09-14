@@ -29,14 +29,16 @@ export function CategoryToolbar() {
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
+  // "|" not "," — see FilterSidebar.tsx: the price bands contain commas
+  // themselves, which corrupted the multi-select round-trip.
   function toggle(param: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
-    const current = params.get(param)?.split(",").filter(Boolean) ?? [];
+    const current = params.get(param)?.split("|").filter(Boolean) ?? [];
     const next = current.includes(value)
       ? current.filter((v) => v !== value)
       : [...current, value];
     if (next.length) {
-      params.set(param, next.join(","));
+      params.set(param, next.join("|"));
     } else {
       params.delete(param);
     }
@@ -44,7 +46,7 @@ export function CategoryToolbar() {
   }
 
   function isChecked(param: string, value: string) {
-    return searchParams.get(param)?.split(",").includes(value) ?? false;
+    return searchParams.get(param)?.split("|").includes(value) ?? false;
   }
 
   return (

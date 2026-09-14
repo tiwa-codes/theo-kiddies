@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CategoryToolbar } from "@/components/filters/CategoryToolbar";
 import { FilterSidebar } from "@/components/filters/FilterSidebar";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { Container } from "@/components/ui/Container";
-import { getAllProducts } from "@/lib/products";
+import { queryProducts, type ProductFilters } from "@/lib/products";
 
 // Without this, Next's fetch cache serves stale results — a product's
 // published/in-stock/price change wouldn't show up until something else
@@ -50,7 +51,7 @@ type SearchParams = {
   price?: string;
   availability?: string;
   sort?: string;
-  q?: string;
+  page?: string;
 };
 
 export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
@@ -76,75 +77,62 @@ export default async function CategoryPage({
   const title = categoryMap[params.slug];
   if (!title) return notFound();
 
-  const products = await getAllProducts();
+  // --- Base filter by slug, plus everything from the toolbar/sidebar,
+  // pushed into the query rather than fetched-then-filtered in memory. ---
+  const filters: ProductFilters = {
+    page: Number(searchParams.page) > 0 ? Number(searchParams.page) : 1,
+  };
 
-  // --- Base filter by slug ---
-  let filtered = [...products];
   if (ageGroupMap[params.slug]) {
-    filtered = filtered.filter((p) => p.ageGroup === ageGroupMap[params.slug]);
+    filters.ageGroup = ageGroupMap[params.slug];
   } else if (categoryNameMap[params.slug]) {
-    filtered = filtered.filter((p) => p.category === categoryNameMap[params.slug]);
+    filters.category = categoryNameMap[params.slug];
   } else if (params.slug === "best-sellers") {
-    filtered = filtered.filter((p) => p.badge === "Best Seller");
+    filters.badge = "Best Seller";
   } else if (params.slug === "new-arrivals") {
-    filtered = filtered.filter((p) => p.badge === "New");
+    filters.badge = "New";
   } else if (params.slug === "deals") {
-    filtered = filtered.filter((p) => !!p.compareAtPrice);
+    filters.onSale = true;
   }
   // gift-ideas — show all
 
-  // --- Search query ---
-  if (searchParams.q) {
-    const q = searchParams.q.toLowerCase();
-    filtered = filtered.filter(
-      (p) =>
-        p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
-    );
-  }
-
-  // --- Age filter ---
-  if (searchParams.age) {
-    const ages = searchParams.age.split(",");
-    filtered = filtered.filter((p) => ages.includes(p.ageGroup));
-  }
-
-  // --- Size filter ---
-  if (searchParams.size) {
-    const sizes = searchParams.size.split(",").map((s) => s.toLowerCase());
-    filtered = filtered.filter((p) =>
-      p.sizes.some((s) => sizes.includes(s.label.toLowerCase()))
-    );
-  }
-
-  // --- Price filter ---
-  if (searchParams.price) {
-    const ranges = searchParams.price.split(",");
-    filtered = filtered.filter((p) =>
-      ranges.some((range) => {
-        if (range === "₦0-₦5,000") return p.price <= 5000;
-        if (range === "₦5,000-₦15,000") return p.price > 5000 && p.price <= 15000;
-        if (range === "₦15,000-₦30,000") return p.price > 15000 && p.price <= 30000;
-        if (range === "₦30,000+") return p.price > 30000;
-        return true;
-      })
-    );
-  }
-
-  // --- Availability filter ---
+  // "|" not "," — the price band labels contain commas themselves
+  // (e.g. "₦30,000+"), which collides with "," as the multi-select
+  // delimiter. See FilterSidebar.tsx / CategoryToolbar.tsx.
+  if (searchParams.age) filters.ages = searchParams.age.split("|");
+  if (searchParams.price) filters.priceBands = searchParams.price.split("|");
   if (searchParams.availability) {
-    const avail = searchParams.availability.split(",");
+    const avail = searchParams.availability.split("|");
     if (avail.includes("In stock") && !avail.includes("Pre-order")) {
-      filtered = filtered.filter((p) => p.inStock);
+      filters.inStockOnly = true;
     }
   }
+  if (searchParams.sort === "price-asc" || searchParams.sort === "price-desc" || searchParams.sort === "newest") {
+    filters.sort = searchParams.sort;
+  }
 
-  // --- Sort ---
-  if (searchParams.sort === "price-asc") {
-    filtered.sort((a, b) => a.price - b.price);
-  } else if (searchParams.sort === "price-desc") {
-    filtered.sort((a, b) => b.price - a.price);
-  } else if (searchParams.sort === "newest") {
-    filtered.reverse();
+  const result = await queryProducts(filters);
+
+  // Size isn't pushed into the query — sizes is a JSONB array of
+  // {id, label} objects, and PostgREST can't express "any element's label
+  // matches one of several values" without a raw SQL function. Applied
+  // within the current page only; see lib/products.ts for the tradeoff.
+  let products = result.products;
+  if (searchParams.size) {
+    const sizes = searchParams.size.split("|").map((s) => s.toLowerCase());
+    products = products.filter((p) => p.sizes.some((s) => sizes.includes(s.label.toLowerCase())));
+  }
+
+  function pageHref(page: number) {
+    const qs = new URLSearchParams();
+    if (searchParams.age) qs.set("age", searchParams.age);
+    if (searchParams.size) qs.set("size", searchParams.size);
+    if (searchParams.price) qs.set("price", searchParams.price);
+    if (searchParams.availability) qs.set("availability", searchParams.availability);
+    if (searchParams.sort) qs.set("sort", searchParams.sort);
+    if (page > 1) qs.set("page", String(page));
+    const query = qs.toString();
+    return `/category/${params.slug}${query ? `?${query}` : ""}`;
   }
 
   return (
@@ -165,7 +153,7 @@ export default async function CategoryPage({
         <div className="grid gap-6 lg:grid-cols-[260px,1fr]">
           <FilterSidebar />
           <div>
-            {filtered.length === 0 ? (
+            {products.length === 0 ? (
               <div className="rounded-2xl bg-white p-10 text-center shadow-soft">
                 <p className="font-semibold text-brand-cocoa">No products match your filters.</p>
                 <p className="mt-1 text-sm text-brand-cocoa/60">Try adjusting or clearing the active filters.</p>
@@ -173,13 +161,46 @@ export default async function CategoryPage({
             ) : (
               <>
                 <p className="mb-4 text-sm text-brand-cocoa/60">
-                  {filtered.length} {filtered.length === 1 ? "product" : "products"}
+                  {result.total} {result.total === 1 ? "product" : "products"}
                 </p>
                 <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                  {filtered.map((product) => (
+                  {products.map((product) => (
                     <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
+
+                {result.totalPages > 1 && (
+                  <nav
+                    aria-label="Pagination"
+                    className="mt-8 flex items-center justify-center gap-2"
+                  >
+                    <Link
+                      href={pageHref(Math.max(1, result.page - 1))}
+                      aria-disabled={result.page <= 1}
+                      className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                        result.page <= 1
+                          ? "pointer-events-none border-gray-200 text-gray-300"
+                          : "border-brand-orange/20 text-brand-cocoa hover:border-brand-orange/40"
+                      }`}
+                    >
+                      Previous
+                    </Link>
+                    <span className="text-sm text-brand-cocoa/60">
+                      Page {result.page} of {result.totalPages}
+                    </span>
+                    <Link
+                      href={pageHref(Math.min(result.totalPages, result.page + 1))}
+                      aria-disabled={result.page >= result.totalPages}
+                      className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                        result.page >= result.totalPages
+                          ? "pointer-events-none border-gray-200 text-gray-300"
+                          : "border-brand-orange/20 text-brand-cocoa hover:border-brand-orange/40"
+                      }`}
+                    >
+                      Next
+                    </Link>
+                  </nav>
+                )}
               </>
             )}
           </div>

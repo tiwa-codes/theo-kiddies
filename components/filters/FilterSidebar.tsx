@@ -3,9 +3,10 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Filter } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { AGE_GROUPS } from "@/lib/ageGroups";
 
 const filterSections = [
-  { title: "Age", param: "age", options: ["0-12 Months", "1-3 Years", "4-7 Years", "8-12 Years"] },
+  { title: "Age", param: "age", options: [...AGE_GROUPS] },
   { title: "Size", param: "size", options: ["XS", "S", "M", "L", "One Size"] },
   { title: "Price range", param: "price", options: ["₦0-₦5,000", "₦5,000-₦15,000", "₦15,000-₦30,000", "₦30,000+"] },
   { title: "Availability", param: "availability", options: ["In stock", "Pre-order"] },

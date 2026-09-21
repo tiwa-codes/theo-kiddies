@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Menu, Search, ShoppingBag, User, X } from "lucide-react";
-import { navAgeGroups, navCategories, navQuick } from "@/lib/data";
+import { AGE_BANDS, ageGroupSlug } from "@/lib/ageGroups";
+import { navCategories, navQuick } from "@/lib/data";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { Drawer } from "@/components/ui/Drawer";
@@ -114,7 +115,7 @@ export function Header() {
             </button>
             <div
               className={cn(
-                "absolute left-0 top-full z-50 w-[420px] pt-2 transition",
+                "absolute left-0 top-full z-50 w-[560px] pt-2 transition",
                 megaMenuOpen === "age" ? "opacity-100" : "pointer-events-none opacity-0"
               )}
             >
@@ -122,15 +123,28 @@ export function Header() {
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
                   Age groups
                 </p>
-                <div className="mt-4 grid gap-3">
-                  {navAgeGroups.map((item) => (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      className="rounded-2xl border border-brand-orange/10 px-4 py-3 text-sm font-semibold text-brand-cocoa transition hover:bg-brand-cream"
-                    >
-                      {item.label}
-                    </Link>
+                <div className="mt-4 space-y-4">
+                  {AGE_BANDS.map((band) => (
+                    <div key={band.slug}>
+                      <Link
+                        href={`/category/${band.slug}`}
+                        className="text-sm font-semibold text-brand-cocoa hover:text-brand-orange"
+                      >
+                        {band.title}{" "}
+                        <span className="font-normal text-brand-cocoa/60">{band.range}</span>
+                      </Link>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {band.ages.map((age) => (
+                          <Link
+                            key={age}
+                            href={`/category/${ageGroupSlug(age)}`}
+                            className="rounded-full border border-brand-orange/10 px-3 py-1 text-xs font-semibold text-brand-cocoa transition hover:bg-brand-cream"
+                          >
+                            {age}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -272,16 +286,30 @@ export function Header() {
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
                 Shop by Age
               </p>
-              <div className="mt-3 space-y-2">
-                {navAgeGroups.map((item) => (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className="block rounded-2xl border border-brand-orange/10 px-4 py-3 text-sm font-semibold"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
+              <div className="mt-3 space-y-4">
+                {AGE_BANDS.map((band) => (
+                  <div key={band.slug}>
+                    <Link
+                      href={`/category/${band.slug}`}
+                      className="block rounded-2xl border border-brand-orange/10 px-4 py-3 text-sm font-semibold"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      {band.title}{" "}
+                      <span className="font-normal text-brand-cocoa/60">{band.range}</span>
+                    </Link>
+                    <div className="mt-2 flex flex-wrap gap-1.5 pl-2">
+                      {band.ages.map((age) => (
+                        <Link
+                          key={age}
+                          href={`/category/${ageGroupSlug(age)}`}
+                          className="rounded-full border border-brand-orange/10 px-3 py-1 text-xs font-semibold text-brand-cocoa"
+                          onClick={() => setMobileOpen(false)}
+                        >
+                          {age}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

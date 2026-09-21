@@ -1,13 +1,7 @@
+import { AGE_BANDS } from "@/lib/ageGroups";
 import type { Category, Product } from "@/types";
 
 export const announcement = "Free nationwide delivery on orders over ₦150,000 – 2-day dispatch";
-
-export const navAgeGroups = [
-  { label: "0-12 Months", href: "/category/0-12-months" },
-  { label: "1-3 Years", href: "/category/1-3-years" },
-  { label: "4-7 Years", href: "/category/4-7-years" },
-  { label: "8-12 Years", href: "/category/8-12-years" },
-];
 
 export const navCategories = [
   { label: "Clothing", href: "/category/clothing" },
@@ -25,12 +19,11 @@ export const navQuick = [
   { label: "Gift Ideas", href: "/category/gift-ideas" },
 ];
 
-export const shopByAge = [
-  { title: "0-12 Months", note: "Soft layers for newborns", href: "/category/0-12-months" },
-  { title: "1-3 Years", note: "Built for everyday play", href: "/category/1-3-years" },
-  { title: "4-7 Years", note: "School-ready essentials", href: "/category/4-7-years" },
-  { title: "8-12 Years", note: "Style with confidence", href: "/category/8-12-years" },
-];
+export const shopByAge = AGE_BANDS.map((band) => ({
+  title: band.range,
+  note: band.note,
+  href: `/category/${band.slug}`,
+}));
 
 export const featuredCategories: Category[] = [
   {
@@ -79,7 +72,7 @@ export const products: Product[] = [
     price: 42,
     compareAtPrice: 54,
     badge: "20% Off",
-    ageGroup: "4-7 Years",
+    ageGroup: "5-6 Years",
     category: "Clothing",
     images: ["/images/product-placeholder.svg", "/images/product-placeholder.svg", "/images/product-placeholder.svg"],
     rating: 4.8,
@@ -101,7 +94,7 @@ export const products: Product[] = [
     title: "Sunny Day Sneakers",
     price: 36,
     badge: "Best Seller",
-    ageGroup: "8-12 Years",
+    ageGroup: "9-10 Years",
     category: "Shoes",
     images: ["/images/product-placeholder.svg", "/images/product-placeholder.svg"],
     rating: 4.7,
@@ -122,7 +115,7 @@ export const products: Product[] = [
     slug: "rainbow-block-set",
     title: "Rainbow Block Set",
     price: 28,
-    ageGroup: "1-3 Years",
+    ageGroup: "2-3 Years",
     category: "Toys",
     images: ["/images/product-placeholder.svg"],
     rating: 4.9,
@@ -137,7 +130,7 @@ export const products: Product[] = [
     title: "Mini Explorer Backpack",
     price: 32,
     badge: "New",
-    ageGroup: "4-7 Years",
+    ageGroup: "5-6 Years",
     category: "School Supplies",
     images: ["/images/product-placeholder.svg"],
     rating: 4.6,
@@ -156,7 +149,7 @@ export const products: Product[] = [
     price: 58,
     compareAtPrice: 72,
     badge: "Bundle",
-    ageGroup: "0-12 Months",
+    ageGroup: "6-9 Months",
     category: "Baby Essentials",
     images: ["/images/product-placeholder.svg"],
     rating: 4.9,
@@ -170,7 +163,7 @@ export const products: Product[] = [
     slug: "soft-knit-beanie",
     title: "Soft Knit Beanie",
     price: 16,
-    ageGroup: "1-3 Years",
+    ageGroup: "2-3 Years",
     category: "Accessories",
     images: ["/images/product-placeholder.svg"],
     rating: 4.5,

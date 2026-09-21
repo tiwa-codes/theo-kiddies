@@ -5,6 +5,7 @@ import { CategoryToolbar } from "@/components/filters/CategoryToolbar";
 import { FilterSidebar } from "@/components/filters/FilterSidebar";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { Container } from "@/components/ui/Container";
+import { resolveAgeSlug } from "@/lib/ageGroups";
 import { queryProducts, type ProductFilters } from "@/lib/products";
 
 // Without this, Next's fetch cache serves stale results — a product's
@@ -13,10 +14,6 @@ import { queryProducts, type ProductFilters } from "@/lib/products";
 export const dynamic = "force-dynamic";
 
 const categoryMap: Record<string, string> = {
-  "0-12-months": "0-12 Months",
-  "1-3-years": "1-3 Years",
-  "4-7-years": "4-7 Years",
-  "8-12-years": "8-12 Years",
   clothing: "Clothing",
   shoes: "Shoes",
   toys: "Toys",
@@ -27,13 +24,6 @@ const categoryMap: Record<string, string> = {
   "best-sellers": "Best Sellers",
   deals: "Deals",
   "gift-ideas": "Gift Ideas",
-};
-
-const ageGroupMap: Record<string, string> = {
-  "0-12-months": "0-12 Months",
-  "1-3-years": "1-3 Years",
-  "4-7-years": "4-7 Years",
-  "8-12-years": "8-12 Years",
 };
 
 const categoryNameMap: Record<string, string> = {
@@ -55,7 +45,7 @@ type SearchParams = {
 };
 
 export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const title = categoryMap[params.slug];
+  const title = resolveAgeSlug(params.slug)?.title ?? categoryMap[params.slug];
   if (!title) return { title: "Category" };
   return {
     title: `${title} for Kids`,
@@ -74,7 +64,8 @@ export default async function CategoryPage({
   params: { slug: string };
   searchParams: SearchParams;
 }) {
-  const title = categoryMap[params.slug];
+  const ageSlug = resolveAgeSlug(params.slug);
+  const title = ageSlug?.title ?? categoryMap[params.slug];
   if (!title) return notFound();
 
   // --- Base filter by slug, plus everything from the toolbar/sidebar,
@@ -83,8 +74,8 @@ export default async function CategoryPage({
     page: Number(searchParams.page) > 0 ? Number(searchParams.page) : 1,
   };
 
-  if (ageGroupMap[params.slug]) {
-    filters.ageGroup = ageGroupMap[params.slug];
+  if (ageSlug) {
+    filters.ages = [...ageSlug.ages];
   } else if (categoryNameMap[params.slug]) {
     filters.category = categoryNameMap[params.slug];
   } else if (params.slug === "best-sellers") {
@@ -99,7 +90,12 @@ export default async function CategoryPage({
   // "|" not "," — the price band labels contain commas themselves
   // (e.g. "₦30,000+"), which collides with "," as the multi-select
   // delimiter. See FilterSidebar.tsx / CategoryToolbar.tsx.
-  if (searchParams.age) filters.ages = searchParams.age.split("|");
+  if (searchParams.age) {
+    // On an age page the sidebar narrows within that page's ages rather than
+    // replacing them; an empty overlap correctly matches nothing.
+    const selected = searchParams.age.split("|");
+    filters.ages = filters.ages ? filters.ages.filter((a) => selected.includes(a)) : selected;
+  }
   if (searchParams.price) filters.priceBands = searchParams.price.split("|");
   if (searchParams.availability) {
     const avail = searchParams.availability.split("|");

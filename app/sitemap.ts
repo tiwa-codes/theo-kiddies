@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { AGE_BANDS, AGE_GROUPS, ageGroupSlug } from "@/lib/ageGroups";
 import { products } from "@/lib/data";
 
 const base = process.env.NEXT_PUBLIC_URL ?? "https://theokiddies.com";
@@ -14,11 +15,11 @@ const staticRoutes = [
   { url: "/category/new-arrivals", priority: 0.8, changeFrequency: "daily" },
   { url: "/category/best-sellers", priority: 0.8, changeFrequency: "daily" },
   { url: "/category/deals", priority: 0.8, changeFrequency: "daily" },
-  { url: "/category/0-12-months", priority: 0.7, changeFrequency: "weekly" },
-  { url: "/category/1-3-years", priority: 0.7, changeFrequency: "weekly" },
-  { url: "/category/4-7-years", priority: 0.7, changeFrequency: "weekly" },
-  { url: "/category/8-12-years", priority: 0.7, changeFrequency: "weekly" },
 ] as const;
+
+const ageRoutes = [...AGE_BANDS.map((band) => band.slug), ...AGE_GROUPS.map(ageGroupSlug)].map(
+  (slug) => ({ url: `/category/${slug}`, priority: 0.7, changeFrequency: "weekly" as const })
+);
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const productEntries: MetadataRoute.Sitemap = products.map((p) => ({
@@ -28,7 +29,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  const staticEntries: MetadataRoute.Sitemap = staticRoutes.map((r) => ({
+  const staticEntries: MetadataRoute.Sitemap = [...staticRoutes, ...ageRoutes].map((r) => ({
     url: `${base}${r.url}`,
     lastModified: new Date(),
     changeFrequency: r.changeFrequency,

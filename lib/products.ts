@@ -127,9 +127,10 @@ const PRICE_BANDS: Record<string, { min?: number; max?: number }> = {
 
 export type ProductFilters = {
   category?: string;
-  ageGroup?: string;
   badge?: string;
   onSale?: boolean;
+  // undefined = no age filter; an empty array = match nothing (e.g. the
+  // sidebar's selection doesn't overlap the age page you're on).
   ages?: string[];
   priceBands?: string[];
   inStockOnly?: boolean;
@@ -186,10 +187,9 @@ export async function queryProducts(filters: ProductFilters = {}): Promise<Produ
   if (!hasSupabaseConfig()) {
     let matches = staticProducts.filter((p) => {
       if (filters.category && p.category !== filters.category) return false;
-      if (filters.ageGroup && p.ageGroup !== filters.ageGroup) return false;
       if (filters.badge && p.badge !== filters.badge) return false;
       if (filters.onSale && !p.compareAtPrice) return false;
-      if (filters.ages?.length && !filters.ages.includes(p.ageGroup)) return false;
+      if (filters.ages && !filters.ages.includes(p.ageGroup)) return false;
       if (filters.priceBands?.length && !inPriceBands(p.price, filters.priceBands)) return false;
       if (filters.inStockOnly && !p.inStock) return false;
       return true;
@@ -212,10 +212,9 @@ export async function queryProducts(filters: ProductFilters = {}): Promise<Produ
     let query = supabasePublic.from("products").select("*", { count: "exact" }).eq("published", true);
 
     if (filters.category) query = query.eq("category", filters.category);
-    if (filters.ageGroup) query = query.eq("age_group", filters.ageGroup);
     if (filters.badge) query = query.eq("badge", filters.badge);
     if (filters.onSale) query = query.not("compare_at_price", "is", null);
-    if (filters.ages?.length) query = query.in("age_group", filters.ages);
+    if (filters.ages) query = query.in("age_group", filters.ages);
     if (filters.inStockOnly) query = query.eq("in_stock", true);
 
     if (filters.priceBands?.length) {

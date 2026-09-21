@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, Pencil, Trash2, Search, ExternalLink, X, Loader2, Upload, ChevronLeft, ChevronRight } from "lucide-react";
+import { AGE_GROUPS as AGE_BRACKETS } from "@/lib/ageGroups";
 import { slugify } from "@/lib/utils";
 import type { DbProduct } from "@/lib/supabase";
 
@@ -29,7 +30,7 @@ const EMPTY_FORM: FormState = {
   images: "", colors: "", sizes: "", in_stock: true, published: true, description: "",
 };
 
-const AGE_GROUPS = ["Not specified", "0-12 Months", "1-3 Years", "4-7 Years", "8-12 Years"];
+const AGE_GROUPS = ["Not specified", ...AGE_BRACKETS];
 const CATEGORIES = ["Clothing", "Shoes", "Toys", "School Supplies", "Baby Essentials", "Accessories"];
 const AGE_OPTIONAL_CATEGORIES = new Set(["Shoes", "Accessories", "School Supplies"]);
 

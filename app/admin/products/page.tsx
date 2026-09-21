@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, Pencil, Trash2, Search, ExternalLink, X, Loader2, Upload, ChevronLeft, ChevronRight } from "lucide-react";
 import { AGE_GROUPS as AGE_BRACKETS } from "@/lib/ageGroups";
+import { uploadProductImages } from "@/lib/imageUpload";
 import { slugify } from "@/lib/utils";
 import type { DbProduct } from "@/lib/supabase";
 
@@ -79,6 +80,7 @@ export default function AdminProductsPage() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
 
@@ -94,9 +96,9 @@ export default function AdminProductsPage() {
   useEffect(() => { loadProducts(); }, []);
 
   // ── Toast helper ──────────────────────────────────────────────────────────
-  function showToast(msg: string, ok = true) {
+  function showToast(msg: string, ok = true, ms = 4000) {
     setToast({ msg, ok });
-    setTimeout(() => setToast(null), 4000);
+    setTimeout(() => setToast(null), ms);
   }
 
   // ── Open modal ────────────────────────────────────────────────────────────
@@ -166,29 +168,36 @@ export default function AdminProductsPage() {
   async function uploadFiles(files: File[]) {
     if (!files.length) return;
     setUploading(true);
+    setUploadProgress(files.length > 1 ? `Uploading 1 of ${files.length}…` : "Uploading…");
     try {
-      const formData = new FormData();
-      files.forEach((file) => formData.append("files", file));
-
-      const res = await fetch("/api/admin/products/upload-image", {
-        method: "POST",
-        body: formData,
+      // One request per photo, big ones shrunk first — see lib/imageUpload.ts.
+      const { urls, failures } = await uploadProductImages(files, {
+        onProgress: (done, total) =>
+          setUploadProgress(total > 1 ? `Uploading ${Math.min(done + 1, total)} of ${total}…` : "Uploading…"),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Upload failed");
 
-      const urls = Array.isArray(data.urls) ? data.urls : [];
-      if (!urls.length) throw new Error("No uploaded image URL returned");
+      if (urls.length) {
+        setForm((prev) => ({
+          ...prev,
+          images: [prev.images, ...urls].filter(Boolean).join("\n"),
+        }));
+      }
 
-      setForm((prev) => ({
-        ...prev,
-        images: [prev.images, ...urls].filter(Boolean).join("\n"),
-      }));
-      showToast(`${urls.length} image${urls.length > 1 ? "s" : ""} uploaded ✓`);
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "Image upload failed", false);
+      if (failures.length === 0) {
+        showToast(`${urls.length} image${urls.length > 1 ? "s" : ""} uploaded ✓`);
+      } else {
+        const detail = failures.map((f) => `${f.name}: ${f.reason}`).join(" · ");
+        showToast(
+          urls.length
+            ? `${urls.length} of ${files.length} uploaded. Failed — ${detail}`
+            : `Upload failed — ${detail}`,
+          false,
+          9000
+        );
+      }
     } finally {
       setUploading(false);
+      setUploadProgress("");
     }
   }
 
@@ -278,7 +287,7 @@ export default function AdminProductsPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Toast */}
       {toast && (
-        <div className={`fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-float ${toast.ok ? "bg-brand-cocoa" : "bg-red-600"}`}>
+        <div className={`fixed bottom-6 left-1/2 z-50 w-max max-w-[90vw] -translate-x-1/2 rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-float ${toast.ok ? "bg-brand-cocoa" : "bg-red-600"}`}>
           {toast.msg}
         </div>
       )}
@@ -504,12 +513,12 @@ export default function AdminProductsPage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
                       Drag and drop images here
                     </p>
-                    <p className="mt-1 text-xs text-gray-500">PNG, JPG, WebP up to your Supabase bucket limit</p>
+                    <p className="mt-1 text-xs text-gray-500">Select several photos at once — large ones are shrunk automatically</p>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-brand-orange/20 px-3 py-1.5 text-xs font-semibold text-brand-orange transition hover:bg-brand-orange/5">
                       {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-                      {uploading ? "Uploading..." : "Upload image files"}
+                      {uploading ? uploadProgress : "Upload image files"}
                       <input
                         type="file"
                         accept="image/*"

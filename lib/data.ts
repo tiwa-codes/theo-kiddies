@@ -1,5 +1,5 @@
 import { AGE_BANDS } from "@/lib/ageGroups";
-import type { Category, Product } from "@/types";
+import type { Category } from "@/types";
 
 export const announcement = "Free nationwide delivery on orders over ₦150,000 – 2-day dispatch";
 
@@ -61,119 +61,6 @@ export const featuredCategories: Category[] = [
     slug: "accessories",
     description: "Hats, socks, and little extras",
     icon: "accessory",
-  },
-];
-
-export const products: Product[] = [
-  {
-    id: "tk-001",
-    slug: "cloudsoft-hoodie-set",
-    title: "CloudSoft Hoodie Set",
-    price: 42,
-    compareAtPrice: 54,
-    badge: "20% Off",
-    ageGroup: "5-6 Years",
-    category: "Clothing",
-    images: ["/images/product-placeholder.svg", "/images/product-placeholder.svg", "/images/product-placeholder.svg"],
-    rating: 4.8,
-    reviews: 128,
-    colors: [
-      { id: "coral", label: "Warm Coral" },
-      { id: "sage", label: "Soft Sage" },
-    ],
-    sizes: [
-      { id: "xs", label: "XS" },
-      { id: "s", label: "S" },
-      { id: "m", label: "M" },
-    ],
-    inStock: true,
-  },
-  {
-    id: "tk-002",
-    slug: "sunny-day-sneakers",
-    title: "Sunny Day Sneakers",
-    price: 36,
-    badge: "Best Seller",
-    ageGroup: "9-10 Years",
-    category: "Shoes",
-    images: ["/images/product-placeholder.svg", "/images/product-placeholder.svg"],
-    rating: 4.7,
-    reviews: 94,
-    colors: [
-      { id: "sand", label: "Sand" },
-      { id: "sky", label: "Sky Blue" },
-    ],
-    sizes: [
-      { id: "1", label: "1" },
-      { id: "2", label: "2" },
-      { id: "3", label: "3" },
-    ],
-    inStock: true,
-  },
-  {
-    id: "tk-003",
-    slug: "rainbow-block-set",
-    title: "Rainbow Block Set",
-    price: 28,
-    ageGroup: "2-3 Years",
-    category: "Toys",
-    images: ["/images/product-placeholder.svg"],
-    rating: 4.9,
-    reviews: 210,
-    colors: [{ id: "multi", label: "Multi" }],
-    sizes: [{ id: "std", label: "Standard" }],
-    inStock: true,
-  },
-  {
-    id: "tk-004",
-    slug: "mini-explorer-backpack",
-    title: "Mini Explorer Backpack",
-    price: 32,
-    badge: "New",
-    ageGroup: "5-6 Years",
-    category: "School Supplies",
-    images: ["/images/product-placeholder.svg"],
-    rating: 4.6,
-    reviews: 76,
-    colors: [
-      { id: "mint", label: "Mint" },
-      { id: "apricot", label: "Apricot" },
-    ],
-    sizes: [{ id: "one", label: "One Size" }],
-    inStock: true,
-  },
-  {
-    id: "tk-005",
-    slug: "cozy-baby-essentials",
-    title: "Cozy Baby Essentials Kit",
-    price: 58,
-    compareAtPrice: 72,
-    badge: "Bundle",
-    ageGroup: "6-9 Months",
-    category: "Baby Essentials",
-    images: ["/images/product-placeholder.svg"],
-    rating: 4.9,
-    reviews: 184,
-    colors: [{ id: "cream", label: "Cream" }],
-    sizes: [{ id: "one", label: "One Size" }],
-    inStock: true,
-  },
-  {
-    id: "tk-006",
-    slug: "soft-knit-beanie",
-    title: "Soft Knit Beanie",
-    price: 16,
-    ageGroup: "2-3 Years",
-    category: "Accessories",
-    images: ["/images/product-placeholder.svg"],
-    rating: 4.5,
-    reviews: 38,
-    colors: [
-      { id: "cocoa", label: "Cocoa" },
-      { id: "peach", label: "Peach" },
-    ],
-    sizes: [{ id: "one", label: "One Size" }],
-    inStock: true,
   },
 ];
 

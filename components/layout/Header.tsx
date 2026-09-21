@@ -275,13 +275,15 @@ export function Header() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2" onClick={() => setMobileOpen(false)}>
               <Image src="/images/theokiddies-logo-trimmed.png" alt="Theo Kiddies" width={180} height={36} className="h-7 w-auto" />
-              <span className="text-lg font-bold">Theo Kiddies</span>
             </Link>
             <button type="button" onClick={() => setMobileOpen(false)}>
               <X className="h-5 w-5" />
             </button>
           </div>
-          <div className="space-y-6">
+          {/* The header above stays put; only the list scrolls. Without
+              min-h-0/overflow the list is taller than the screen and the
+              bottom items (categories, New Arrivals...) can't be reached. */}
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain pb-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-orange/70">
                 Shop by Age

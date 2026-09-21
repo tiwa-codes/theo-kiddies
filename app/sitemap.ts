@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { AGE_BANDS, AGE_GROUPS, ageGroupSlug } from "@/lib/ageGroups";
-import { products } from "@/lib/data";
+import { getAllProducts } from "@/lib/products";
 
 const base = process.env.NEXT_PUBLIC_URL ?? "https://theokiddies.com";
 
@@ -21,7 +21,11 @@ const ageRoutes = [...AGE_BANDS.map((band) => band.slug), ...AGE_GROUPS.map(ageG
   (slug) => ({ url: `/category/${slug}`, priority: 0.7, changeFrequency: "weekly" as const })
 );
 
-export default function sitemap(): MetadataRoute.Sitemap {
+// Rendered per request so newly added products appear without a redeploy.
+export const dynamic = "force-dynamic";
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const products = await getAllProducts();
   const productEntries: MetadataRoute.Sitemap = products.map((p) => ({
     url: `${base}/product/${p.slug}`,
     lastModified: new Date(),

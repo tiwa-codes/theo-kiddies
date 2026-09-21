@@ -1,22 +1,34 @@
 /**
- * Fetch products from Supabase when configured,
- * otherwise fall back to the static seed data in lib/data.ts.
+ * Public storefront reads from Supabase.
+ *
+ * There is deliberately no built-in fallback catalogue: when Supabase isn't
+ * configured, the storefront shows nothing (and logs why) rather than
+ * inventing products. A fallback of demo products used to live here, and on
+ * a deployment missing one env var it put fake products with fake prices on
+ * the live site.
  *
  * Uses the anon-key client, not the service-role one — these are public
  * storefront reads, and the "Public can read products" RLS policy in
  * schema.sql is what should be authorising them, the same as it would for
  * a request straight from the browser. None of this needs to bypass RLS.
  */
-import { products as staticProducts } from "@/lib/data";
 import { supabasePublic, dbProductToProduct, escapeLikePattern, type DbProduct } from "@/lib/supabase";
 import type { Product } from "@/types";
 
 function hasSupabaseConfig() {
-  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const configured = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+  if (!configured) {
+    console.error(
+      "Supabase public env vars missing (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY) — the storefront will show no products."
+    );
+  }
+  return configured;
 }
 
 export async function getAllProducts(): Promise<Product[]> {
-  if (!hasSupabaseConfig()) return staticProducts;
+  if (!hasSupabaseConfig()) return [];
 
   try {
     const { data, error } = await supabasePublic
@@ -34,9 +46,7 @@ export async function getAllProducts(): Promise<Product[]> {
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
-  if (!hasSupabaseConfig()) {
-    return staticProducts.find((p) => p.slug === slug) ?? null;
-  }
+  if (!hasSupabaseConfig()) return null;
 
   try {
     const { data, error } = await supabasePublic
@@ -68,8 +78,9 @@ export async function getProductsBySlugs(slugs: string[]): Promise<Product[]> {
   const unique = Array.from(new Set(slugs));
   if (unique.length === 0) return [];
 
+  // Prices come from the catalogue or nowhere — never guess one.
   if (!hasSupabaseConfig()) {
-    return staticProducts.filter((p) => unique.includes(p.slug));
+    throw new Error("Cannot price an order: Supabase public env vars are missing.");
   }
 
   const { data, error } = await supabasePublic.from("products").select("*").in("slug", unique);
@@ -90,12 +101,7 @@ export async function searchProducts(query: string): Promise<Product[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
 
-  if (!hasSupabaseConfig()) {
-    const q = trimmed.toLowerCase();
-    return staticProducts.filter(
-      (p) => p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
-    );
-  }
+  if (!hasSupabaseConfig()) return [];
 
   const pattern = `%${escapeLikePattern(trimmed)}%`;
   const [byTitle, byDescription, byCategory] = await Promise.all([
@@ -147,24 +153,6 @@ export type ProductPage = {
   totalPages: number;
 };
 
-function applySortStatic(products: Product[], sort: ProductFilters["sort"]): Product[] {
-  const sorted = [...products];
-  if (sort === "price-asc") sorted.sort((a, b) => a.price - b.price);
-  else if (sort === "price-desc") sorted.sort((a, b) => b.price - a.price);
-  else if (sort === "newest") sorted.reverse();
-  return sorted;
-}
-
-function inPriceBands(price: number, bands: string[]): boolean {
-  return bands.some((band) => {
-    const range = PRICE_BANDS[band];
-    if (!range) return false;
-    if (range.min !== undefined && price <= range.min) return false;
-    if (range.max !== undefined && price > range.max) return false;
-    return true;
-  });
-}
-
 /**
  * Category-page listing: category/age-group/badge/on-sale/price-band/
  * in-stock filters and sort are all pushed into the Supabase query, with
@@ -185,25 +173,7 @@ export async function queryProducts(filters: ProductFilters = {}): Promise<Produ
   const perPage = filters.perPage ?? 24;
 
   if (!hasSupabaseConfig()) {
-    let matches = staticProducts.filter((p) => {
-      if (filters.category && p.category !== filters.category) return false;
-      if (filters.badge && p.badge !== filters.badge) return false;
-      if (filters.onSale && !p.compareAtPrice) return false;
-      if (filters.ages && !filters.ages.includes(p.ageGroup)) return false;
-      if (filters.priceBands?.length && !inPriceBands(p.price, filters.priceBands)) return false;
-      if (filters.inStockOnly && !p.inStock) return false;
-      return true;
-    });
-    matches = applySortStatic(matches, filters.sort);
-    const total = matches.length;
-    const from = (page - 1) * perPage;
-    return {
-      products: matches.slice(from, from + perPage),
-      total,
-      page,
-      perPage,
-      totalPages: Math.max(1, Math.ceil(total / perPage)),
-    };
+    return { products: [], total: 0, page: 1, perPage, totalPages: 1 };
   }
 
   // Shared so the count check and the real fetch apply identical filters —
@@ -268,4 +238,26 @@ export async function queryProducts(filters: ProductFilters = {}): Promise<Produ
     perPage,
     totalPages,
   };
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Published products by id — for the wishlist, whose ids come from the
+ * browser's localStorage. Anything that isn't a uuid is dropped first: a
+ * malformed id in an `.in()` on a uuid column makes Postgres reject the
+ * whole query, not just skip that one value.
+ */
+export async function getProductsByIds(ids: string[]): Promise<Product[]> {
+  const valid = Array.from(new Set(ids.filter((id) => UUID.test(id)))).slice(0, 50);
+  if (valid.length === 0 || !hasSupabaseConfig()) return [];
+
+  const { data, error } = await supabasePublic
+    .from("products")
+    .select("*")
+    .eq("published", true)
+    .in("id", valid);
+  if (error) throw error;
+
+  return ((data ?? []) as DbProduct[]).map(dbProductToProduct);
 }

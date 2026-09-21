@@ -1,16 +1,38 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Heart } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
-import { products as staticProducts } from "@/lib/data";
+import type { Product } from "@/types";
 import { useWishlistStore } from "@/store/wishlist";
 
 export default function AccountWishlistPage() {
   const ids = useWishlistStore((s) => s.ids);
-  const items = staticProducts.filter((p) => ids.includes(p.id));
+  const [items, setItems] = useState<Product[]>([]);
+
+  // Wishlist ids live in this browser only; the products themselves come
+  // from the catalogue.
+  useEffect(() => {
+    if (ids.length === 0) {
+      setItems([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/wishlist?ids=${encodeURIComponent(ids.join(","))}`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: Product[]) => {
+        if (!cancelled) setItems(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setItems([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [ids]);
 
   return (
     <div className="min-h-screen bg-brand-cream py-8 sm:py-12">

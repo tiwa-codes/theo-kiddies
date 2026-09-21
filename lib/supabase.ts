@@ -92,6 +92,22 @@ export function dbProductToProduct(row: DbProduct): Product {
   };
 }
 
+/**
+ * supabase-js talks to the database over fetch(), and Next.js caches fetch()
+ * responses in production — even on a page marked `dynamic = "force-dynamic"`.
+ * Measured on a production build: with only force-dynamic, a product added
+ * to the table never showed up in a count or a listing; with the responses
+ * uncached it appeared immediately. That is why the admin dashboard sat at 0
+ * products (a snapshot from when the table was empty) and why storefront
+ * pages can drift from the database. This is store data that changes
+ * constantly (stock, prices, orders), so nothing here should be cached.
+ */
+const noStoreFetch: typeof fetch = (input, init) => fetch(input, { ...init, cache: "no-store" });
+
+function createUncachedClient(url: string, key: string): SupabaseClient {
+  return createClient(url, key, { global: { fetch: noStoreFetch } });
+}
+
 // Lazily initialise so the build doesn't fail when env vars aren't present yet.
 let _client: SupabaseClient | null = null;
 
@@ -110,7 +126,7 @@ export function getSupabase(): SupabaseClient {
       "Supabase env vars missing. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
     );
   }
-  _client = createClient(url, key);
+  _client = createUncachedClient(url, key);
   return _client;
 }
 
@@ -138,7 +154,7 @@ export function getSupabasePublic(): SupabaseClient {
       "Supabase env vars missing. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
     );
   }
-  _publicClient = createClient(url, key);
+  _publicClient = createUncachedClient(url, key);
   return _publicClient;
 }
 

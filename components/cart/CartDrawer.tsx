@@ -6,9 +6,9 @@ import Link from "next/link";
 import { Drawer } from "@/components/ui/Drawer";
 import { Button } from "@/components/ui/Button";
 import { QuantitySelector } from "@/components/ui/QuantitySelector";
+import { FREE_DELIVERY_THRESHOLD_NAIRA } from "@/lib/delivery";
+import { formatPrice } from "@/lib/currency";
 import { useCartStore } from "@/store/cart";
-
-const FREE_DELIVERY_THRESHOLD = 75;
 
 type CartDrawerProps = {
   open: boolean;
@@ -24,8 +24,8 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
     () => items.reduce((total, item) => total + item.price * item.quantity, 0),
     [items]
   );
-  const progress = Math.min((subtotal / FREE_DELIVERY_THRESHOLD) * 100, 100);
-  const remaining = Math.max(FREE_DELIVERY_THRESHOLD - subtotal, 0);
+  const progress = Math.min((subtotal / FREE_DELIVERY_THRESHOLD_NAIRA) * 100, 100);
+  const remaining = Math.max(FREE_DELIVERY_THRESHOLD_NAIRA - subtotal, 0);
 
   return (
     <Drawer open={open} onClose={onClose}>
@@ -52,7 +52,7 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
           <div className="rounded-2xl bg-brand-cream p-4">
             <div className="flex items-center justify-between text-xs font-semibold">
               <span>Free delivery progress</span>
-              <span>${remaining.toFixed(2)} to go</span>
+              <span>{remaining > 0 ? `${formatPrice(remaining)} to go` : "Free delivery unlocked"}</span>
             </div>
             <div className="mt-3 h-2 rounded-full bg-white">
               <div
@@ -71,7 +71,7 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm font-semibold text-brand-cocoa">{item.title}</p>
-                    <p className="text-xs text-brand-cocoa/60">${item.price.toFixed(2)}</p>
+                    <p className="text-xs text-brand-cocoa/60">{formatPrice(item.price)}</p>
                   </div>
                   <button
                     type="button"
@@ -93,7 +93,7 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
         <div className="mt-auto border-t border-brand-orange/10 px-6 py-4">
           <div className="flex items-center justify-between text-sm font-semibold">
             <span>Subtotal</span>
-            <span>${subtotal.toFixed(2)}</span>
+            <span>{formatPrice(subtotal)}</span>
           </div>
           <p className="mt-1 text-xs text-brand-cocoa/60">Taxes and shipping calculated at checkout.</p>
           <div className="mt-4">

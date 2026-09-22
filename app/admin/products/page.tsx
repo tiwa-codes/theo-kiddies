@@ -87,10 +87,16 @@ export default function AdminProductsPage() {
   // ── Load products ──────────────────────────────────────────────────────────
   async function loadProducts() {
     setLoading(true);
-    const res = await fetch("/api/admin/products");
-    const data = await res.json();
-    setProducts(Array.isArray(data) ? data : []);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/admin/products");
+      const data = await res.json();
+      if (!res.ok) throw new Error((data as { error?: string })?.error ?? "Failed to load products");
+      setProducts(Array.isArray(data) ? data : []);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Couldn't load products — check your connection", false);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { loadProducts(); }, []);
@@ -152,8 +158,14 @@ export default function AdminProductsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Save failed");
+      const text = await res.text();
+      let data: { error?: string } | null = null;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = null;
+      }
+      if (!res.ok) throw new Error(data?.error ?? `Save failed (${res.status})`);
 
       showToast(editId ? "Product updated ✓" : "Product created ✓");
       setModalOpen(false);
@@ -267,12 +279,13 @@ export default function AdminProductsPage() {
   // ── Delete ────────────────────────────────────────────────────────────────
   async function handleDelete(p: DbProduct) {
     if (!confirm(`Delete "${p.title}"? This cannot be undone.`)) return;
-    const res = await fetch(`/api/admin/products/${p.id}`, { method: "DELETE" });
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/admin/products/${p.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`Delete failed (${res.status})`);
       showToast("Product deleted");
       setProducts((prev) => prev.filter((x) => x.id !== p.id));
-    } else {
-      showToast("Delete failed", false);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Delete failed — check your connection", false);
     }
   }
 
@@ -627,9 +640,9 @@ export default function AdminProductsPage() {
                 <button type="button" onClick={() => setModalOpen(false)} className="rounded-full border border-gray-200 px-5 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50">
                   Cancel
                 </button>
-                <button type="submit" disabled={saving} className="flex items-center gap-2 rounded-full bg-brand-orange px-5 py-2 text-sm font-semibold text-white hover:bg-brand-orange/90 disabled:opacity-60">
+                <button type="submit" disabled={saving || uploading} title={uploading ? "Wait for photos to finish uploading" : undefined} className="flex items-center gap-2 rounded-full bg-brand-orange px-5 py-2 text-sm font-semibold text-white hover:bg-brand-orange/90 disabled:cursor-not-allowed disabled:opacity-60">
                   {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {saving ? "Saving…" : editId ? "Save changes" : "Create product"}
+                  {saving ? "Saving…" : uploading ? "Waiting for photos…" : editId ? "Save changes" : "Create product"}
                 </button>
               </div>
             </form>

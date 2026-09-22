@@ -18,6 +18,14 @@ export const COMPRESS_ABOVE_BYTES = 1_000_000;
 export const MAX_UPLOAD_BYTES = 4_000_000;
 const JPEG_QUALITY = 0.85;
 const UPLOAD_URL = "/api/admin/products/upload-image";
+/**
+ * A slow phone upload can legitimately take a while, but a request that
+ * never responds at all — a dropped connection, a stalled proxy — used to
+ * leave the picker stuck on "Uploading…" forever with nothing to tell the
+ * admin anything had gone wrong. Reported live: no error, just an
+ * indefinite spinner that only a page reload got them out of.
+ */
+export const DEFAULT_UPLOAD_TIMEOUT_MS = 45_000;
 
 /** Scale down to fit within `max` on the long side, keeping aspect ratio. Never scales up. */
 export function fitWithin(width: number, height: number, max: number): { width: number; height: number } {
@@ -74,12 +82,18 @@ type UploadOptions = {
   prepare?: (file: File) => Promise<File>;
   fetchFn?: typeof fetch;
   onProgress?: (done: number, total: number) => void;
+  timeoutMs?: number;
 };
 
 /** Upload photos one request each. Never throws: problems come back as `failures`. */
 export async function uploadProductImages(
   files: File[],
-  { prepare = prepareImageForUpload, fetchFn, onProgress }: UploadOptions = {}
+  {
+    prepare = prepareImageForUpload,
+    fetchFn,
+    onProgress,
+    timeoutMs = DEFAULT_UPLOAD_TIMEOUT_MS,
+  }: UploadOptions = {}
 ): Promise<UploadResult> {
   const doFetch = fetchFn ?? fetch;
   const urls: string[] = [];
@@ -101,7 +115,14 @@ export async function uploadProductImages(
         } else {
           const body = new FormData();
           body.append("files", file);
-          const res = await doFetch(UPLOAD_URL, { method: "POST", body });
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), timeoutMs);
+          let res: Response;
+          try {
+            res = await doFetch(UPLOAD_URL, { method: "POST", body, signal: controller.signal });
+          } finally {
+            clearTimeout(timer);
+          }
 
           // Read as text first: a host-level error (413, 502) isn't JSON.
           const text = await res.text();
@@ -130,7 +151,13 @@ export async function uploadProductImages(
         }
       }
     } catch (err) {
-      fail(err instanceof Error ? err.message : "Upload failed");
+      fail(
+        err instanceof DOMException && err.name === "AbortError"
+          ? "Upload timed out — check your connection and try again"
+          : err instanceof Error
+            ? err.message
+            : "Upload failed"
+      );
     }
 
     onProgress?.(i + 1, files.length);

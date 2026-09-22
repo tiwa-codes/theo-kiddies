@@ -35,6 +35,65 @@ describe("fitWithin", () => {
   });
 });
 
+describe("uploadProductImages — timeout", () => {
+  /** A fetch that never resolves on its own, but rejects like the real thing when aborted. */
+  function hangingFetch() {
+    return vi.fn((_url: string, init?: { signal?: AbortSignal }) => {
+      return new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+      });
+    }) as unknown as typeof fetch;
+  }
+
+  it("gives up on a request that never responds, instead of hanging forever with no feedback", async () => {
+    vi.useFakeTimers();
+    try {
+      const promise = uploadProductImages([image("a.jpg")], {
+        prepare: identity,
+        fetchFn: hangingFetch(),
+        timeoutMs: 1000,
+      });
+      await vi.advanceTimersByTimeAsync(1000);
+      const result = await promise;
+      expect(result.urls).toEqual([]);
+      expect(result.failures).toEqual([{ name: "a.jpg", reason: expect.stringMatching(/timed out/i) }]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("moves on to the next file after one times out, rather than getting stuck", async () => {
+    vi.useFakeTimers();
+    try {
+      const fn = vi.fn((_url: string, init?: { signal?: AbortSignal }) => {
+        init?.signal?.addEventListener("abort", () => {});
+        return new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+        });
+      }) as unknown as typeof fetch;
+
+      let secondCalled = false;
+      const wrapped = (async (url: string, init: { signal?: AbortSignal }) => {
+        if (secondCalled) return new Response(JSON.stringify({ urls: ["https://cdn/b.jpg"] }), { status: 201 });
+        secondCalled = true;
+        return fn(url, init);
+      }) as unknown as typeof fetch;
+
+      const promise = uploadProductImages([image("a.jpg"), image("b.jpg")], {
+        prepare: identity,
+        fetchFn: wrapped,
+        timeoutMs: 1000,
+      });
+      await vi.advanceTimersByTimeAsync(1000);
+      const result = await promise;
+      expect(result.failures).toEqual([{ name: "a.jpg", reason: expect.stringMatching(/timed out/i) }]);
+      expect(result.urls).toEqual(["https://cdn/b.jpg"]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
 describe("uploadProductImages", () => {
   it("sends one request per image, so no single request can exceed the host's body limit", async () => {
     const { fn, calls } = fakeFetch((n) => ok(n));

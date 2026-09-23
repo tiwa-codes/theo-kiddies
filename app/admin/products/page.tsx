@@ -17,6 +17,7 @@ type FormState = {
   badge: string;
   age_group: string;
   category: string;
+  gender: string;
   images: string;      // newline-separated image URLs
   colors: string;      // comma-separated e.g. "Coral:coral, Sage:sage"
   sizes: string;       // comma-separated e.g. "XS:xs, S:s"
@@ -27,12 +28,13 @@ type FormState = {
 
 const EMPTY_FORM: FormState = {
   title: "", slug: "", price: "", compare_at_price: "", badge: "",
-  age_group: "Not specified", category: "Clothing",
+  age_group: "Not specified", category: "Clothing", gender: "Unisex",
   images: "", colors: "", sizes: "", in_stock: true, published: true, description: "",
 };
 
 const AGE_GROUPS = ["Not specified", ...AGE_BRACKETS];
 const CATEGORIES = ["Clothing", "Shoes", "Toys", "School Supplies", "Baby Essentials", "Accessories"];
+const GENDERS = ["Unisex", "Boys", "Girls"];
 const AGE_OPTIONAL_CATEGORIES = new Set(["Shoes", "Accessories", "School Supplies"]);
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -60,6 +62,7 @@ function dbToForm(p: DbProduct): FormState {
     badge: p.badge ?? "",
     age_group: p.age_group,
     category: p.category,
+    gender: p.gender,
     images: p.images.join("\n"),
     colors: variantsToString(p.colors),
     sizes: variantsToString(p.sizes),
@@ -348,6 +351,7 @@ export default function AdminProductsPage() {
               <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                 <th className="px-5 py-3">Product</th>
                 <th className="px-5 py-3">Category</th>
+                <th className="px-5 py-3">Gender</th>
                 <th className="px-5 py-3">Age</th>
                 <th className="px-5 py-3">Price</th>
                 <th className="px-5 py-3">Status</th>
@@ -358,7 +362,7 @@ export default function AdminProductsPage() {
             <tbody className="divide-y divide-gray-100">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-gray-400">
+                  <td colSpan={8} className="px-5 py-12 text-center text-gray-400">
                     {products.length === 0 ? "No products yet — click \u201cAdd product\u201d to create your first one." : "No products match your search."}
                   </td>
                 </tr>
@@ -386,6 +390,7 @@ export default function AdminProductsPage() {
                     </div>
                   </td>
                   <td className="px-5 py-3 text-gray-600">{product.category}</td>
+                  <td className="px-5 py-3 text-gray-600">{product.gender}</td>
                   <td className="px-5 py-3 text-gray-600">{product.age_group === "Not specified" ? "-" : product.age_group}</td>
                   <td className="px-5 py-3 font-semibold text-gray-900">
                     ₦{Number(product.price).toLocaleString("en-NG")}
@@ -477,6 +482,14 @@ export default function AdminProductsPage() {
                       {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
                     </select>
                   </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-semibold text-gray-700">Gender</label>
+                  <select value={form.gender} onChange={(e) => setField("gender", e.target.value)} className={inputCls}>
+                    {GENDERS.map((g) => <option key={g}>{g}</option>)}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-400">Only matters for products that are boys- or girls-specific — leave as Unisex otherwise.</p>
                 </div>
 
                 <div>

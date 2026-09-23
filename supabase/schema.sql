@@ -190,3 +190,12 @@ as $$
       in_stock = greatest(stock_quantity - qty, 0) > 0
   where id = p_id;
 $$;
+
+-- ============================================================
+-- Gender: some products are boys-only, girls-only, or unisex
+-- ============================================================
+alter table products
+  add column if not exists gender text not null default 'Unisex'
+    check (gender in ('Boys', 'Girls', 'Unisex'));
+
+create index if not exists products_gender_idx on products (gender);

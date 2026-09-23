@@ -37,6 +37,7 @@ const categoryNameMap: Record<string, string> = {
 
 type SearchParams = {
   age?: string;
+  gender?: string;
   size?: string;
   price?: string;
   availability?: string;
@@ -96,6 +97,7 @@ export default async function CategoryPage({
     const selected = searchParams.age.split("|");
     filters.ages = filters.ages ? filters.ages.filter((a) => selected.includes(a)) : selected;
   }
+  if (searchParams.gender) filters.genders = searchParams.gender.split("|");
   if (searchParams.price) filters.priceBands = searchParams.price.split("|");
   if (searchParams.availability) {
     const avail = searchParams.availability.split("|");
@@ -122,6 +124,7 @@ export default async function CategoryPage({
   function pageHref(page: number) {
     const qs = new URLSearchParams();
     if (searchParams.age) qs.set("age", searchParams.age);
+    if (searchParams.gender) qs.set("gender", searchParams.gender);
     if (searchParams.size) qs.set("size", searchParams.size);
     if (searchParams.price) qs.set("price", searchParams.price);
     if (searchParams.availability) qs.set("availability", searchParams.availability);

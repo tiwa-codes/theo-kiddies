@@ -46,6 +46,7 @@ vi.mock("@/lib/products", () => ({
       price: 5000,
       ageGroup: "4-5 Years",
       category: "Clothing",
+      gender: "Unisex",
       images: [],
       rating: 5,
       reviews: 0,

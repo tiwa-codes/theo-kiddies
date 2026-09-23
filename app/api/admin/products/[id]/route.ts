@@ -23,6 +23,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         badge: body.badge || null,
         age_group: String(body.age_group ?? "").trim() || "Not specified",
         category: body.category,
+        gender: ["Boys", "Girls", "Unisex"].includes(body.gender) ? body.gender : "Unisex",
         images: body.images ?? [],
         colors: body.colors ?? [],
         sizes: body.sizes ?? [],

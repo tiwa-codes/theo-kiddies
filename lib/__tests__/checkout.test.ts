@@ -15,6 +15,7 @@ function product(overrides: Partial<Product> = {}): Product {
     price: 4500,
     ageGroup: "4-5 Years",
     category: "Clothing",
+    gender: "Unisex",
     images: [],
     rating: 5,
     reviews: 0,

@@ -59,6 +59,7 @@ export type DbProduct = {
   badge: string | null;
   age_group: string;
   category: string;
+  gender: "Boys" | "Girls" | "Unisex";
   images: string[];
   colors: { id: string; label: string }[];
   sizes: { id: string; label: string }[];
@@ -83,6 +84,7 @@ export function dbProductToProduct(row: DbProduct): Product {
     badge: row.badge ?? undefined,
     ageGroup: row.age_group,
     category: row.category,
+    gender: row.gender,
     images: row.images,
     colors: row.colors,
     sizes: row.sizes,

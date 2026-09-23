@@ -12,6 +12,7 @@ export type Product = {
   badge?: string;
   ageGroup: string;
   category: string;
+  gender: "Boys" | "Girls" | "Unisex";
   images: string[];
   rating: number;
   reviews: number;

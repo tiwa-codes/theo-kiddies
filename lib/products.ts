@@ -138,6 +138,7 @@ export type ProductFilters = {
   // undefined = no age filter; an empty array = match nothing (e.g. the
   // sidebar's selection doesn't overlap the age page you're on).
   ages?: string[];
+  genders?: string[];
   priceBands?: string[];
   inStockOnly?: boolean;
   sort?: "featured" | "newest" | "price-asc" | "price-desc";
@@ -185,6 +186,7 @@ export async function queryProducts(filters: ProductFilters = {}): Promise<Produ
     if (filters.badge) query = query.eq("badge", filters.badge);
     if (filters.onSale) query = query.not("compare_at_price", "is", null);
     if (filters.ages) query = query.in("age_group", filters.ages);
+    if (filters.genders) query = query.in("gender", filters.genders);
     if (filters.inStockOnly) query = query.eq("in_stock", true);
 
     if (filters.priceBands?.length) {

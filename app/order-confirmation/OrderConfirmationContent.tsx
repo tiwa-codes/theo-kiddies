@@ -136,10 +136,10 @@ export function OrderConfirmationContent() {
             Continue shopping
           </Link>
           <Link
-            href="/account"
+            href="/orders/lookup"
             className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-base font-semibold text-brand-cocoa ring-1 ring-brand-orange/15 transition hover:bg-brand-cream"
           >
-            View my account
+            Track my order
           </Link>
         </div>
       </Container>

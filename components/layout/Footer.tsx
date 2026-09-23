@@ -13,7 +13,7 @@ const quickLinks = [
 ];
 
 const customerService = [
-  { label: "Order Tracking", href: "/account" },
+  { label: "Order Tracking", href: "/orders/lookup" },
   { label: "Returns & Exchanges", href: "/returns" },
   { label: "FAQs", href: "/faq" },
   { label: "Size Guide", href: "/size-guide" },

@@ -247,10 +247,13 @@ export function Header() {
           >
             <Search className="h-4 w-4" />
           </button>
+          {/* Guest checkout, no customer accounts — this is order tracking,
+              not a profile page. See docs/LAUNCH-PLAN.md's locked decisions. */}
           <Link
-            href="/account"
+            href="/orders/lookup"
             className="rounded-full border border-brand-orange/10 p-2"
-            aria-label="Account"
+            aria-label="Track an order"
+            title="Track an order"
           >
             <User className="h-4 w-4" />
           </Link>

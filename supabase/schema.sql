@@ -188,8 +188,18 @@ as $$
   update products
   set stock_quantity = greatest(stock_quantity - qty, 0),
       in_stock = greatest(stock_quantity - qty, 0) > 0
-  where id = p_id;
+  where id = p_id
+    and stock_quantity > 0;
 $$;
+
+-- stock_quantity = 0 means "stock isn't being counted for this product",
+-- not "sold out": the product stays available until someone marks it out
+-- of stock by hand. The `stock_quantity > 0` guard above is what makes
+-- that true — without it, the first paid order for any product whose
+-- count was never set (every product added by hand) computed
+-- 0 - qty -> 0 and flipped it to out of stock, so each product would have
+-- sold exactly once. A counted product still sells out automatically:
+-- it reaches 0 through this function, which sets in_stock = false then.
 
 -- ============================================================
 -- Gender: some products are boys-only, girls-only, or unisex

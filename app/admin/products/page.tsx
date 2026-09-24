@@ -22,6 +22,7 @@ type FormState = {
   colors: string;      // comma-separated e.g. "Coral:coral, Sage:sage"
   sizes: string;       // comma-separated e.g. "XS:xs, S:s"
   in_stock: boolean;
+  stock_quantity: string; // kept as text while typing; sent as a number
   published: boolean;
   description: string;
 };
@@ -29,7 +30,7 @@ type FormState = {
 const EMPTY_FORM: FormState = {
   title: "", slug: "", price: "", compare_at_price: "", badge: "",
   age_group: "Not specified", category: "Clothing", gender: "Unisex",
-  images: "", colors: "", sizes: "", in_stock: true, published: true, description: "",
+  images: "", colors: "", sizes: "", in_stock: true, stock_quantity: "0", published: true, description: "",
 };
 
 const AGE_GROUPS = ["Not specified", ...AGE_BRACKETS];
@@ -67,6 +68,7 @@ function dbToForm(p: DbProduct): FormState {
     colors: variantsToString(p.colors),
     sizes: variantsToString(p.sizes),
     in_stock: p.in_stock,
+    stock_quantity: String(p.stock_quantity ?? 0),
     published: p.published,
     description: p.description ?? "",
   };
@@ -131,6 +133,11 @@ export default function AdminProductsPage() {
       if (key === "title" && !editId) {
         next.slug = slugify(value as string);
       }
+      // Entering units in stock makes the product available — otherwise it's
+      // easy to type "12" and leave "In stock" unticked on a sold-out product.
+      if (key === "stock_quantity" && Number(value) > 0) {
+        next.in_stock = true;
+      }
       // For categories where age is usually irrelevant, default to Not specified.
       if (key === "category" && AGE_OPTIONAL_CATEGORIES.has(String(value)) && next.age_group !== "Not specified") {
         next.age_group = "Not specified";
@@ -147,6 +154,7 @@ export default function AdminProductsPage() {
       const body = {
         ...form,
         price: Number(form.price),
+        stock_quantity: form.stock_quantity.trim() === "" ? 0 : Number(form.stock_quantity),
         compare_at_price: form.compare_at_price ? Number(form.compare_at_price) : null,
         images: form.images.split("\n").map((s) => s.trim()).filter(Boolean),
         colors: parseVariants(form.colors),
@@ -400,7 +408,11 @@ export default function AdminProductsPage() {
                   </td>
                   <td className="px-5 py-3">
                     <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${product.in_stock ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
-                      {product.in_stock ? "In stock" : "Out of stock"}
+                      {product.in_stock
+                        ? product.stock_quantity > 0
+                          ? `In stock · ${product.stock_quantity}`
+                          : "In stock"
+                        : "Out of stock"}
                     </span>
                   </td>
                   <td className="px-5 py-3">
@@ -634,6 +646,25 @@ export default function AdminProductsPage() {
                     <label className="mb-1 block text-sm font-semibold text-gray-700">Sizes <span className="text-gray-400 font-normal">(Label:id, …)</span></label>
                     <input value={form.sizes} onChange={(e) => setField("sizes", e.target.value)} className={inputCls} placeholder="XS:xs, S:s, M:m" />
                   </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-semibold text-gray-700">Stock quantity <span className="text-gray-400 font-normal">(units on hand)</span></label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="numeric"
+                    value={form.stock_quantity}
+                    onChange={(e) => setField("stock_quantity", e.target.value)}
+                    className={inputCls}
+                    placeholder="0"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">
+                    Enter how many you have and the shop counts it down with every sale, marking the
+                    product sold out at 0. Leave at 0 if you don&apos;t want to count stock — the product
+                    then stays available until you untick &quot;In stock&quot; yourself.
+                  </p>
                 </div>
 
                 <label className="flex cursor-pointer items-center gap-3">

@@ -1,4 +1,5 @@
 import { requireAdmin, adminAuthResponse } from "@/lib/admin-auth";
+import { parseStockQuantity } from "@/lib/stock";
 import { supabase } from "@/lib/supabase";
 import { slugify } from "@/lib/utils";
 
@@ -35,6 +36,9 @@ export async function POST(req: Request) {
       body.slug = slugify(body.title);
     }
 
+    const stock = parseStockQuantity(body.stock_quantity);
+    if (!stock.ok) return Response.json({ error: stock.error }, { status: 400 });
+
     const { data, error } = await supabase
       .from("products")
       .insert({
@@ -50,6 +54,7 @@ export async function POST(req: Request) {
         colors: body.colors ?? [],
         sizes: body.sizes ?? [],
         in_stock: body.in_stock ?? true,
+        stock_quantity: stock.value ?? 0,
         // A new product has no reviews yet — defaulting to a perfect 5.0
         // was fabricated social proof, same issue as the testimonials.
         rating: body.rating ? Number(body.rating) : 0,

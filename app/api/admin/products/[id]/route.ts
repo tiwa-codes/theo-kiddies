@@ -1,4 +1,5 @@
 import { requireAdmin, adminAuthResponse } from "@/lib/admin-auth";
+import { parseStockQuantity } from "@/lib/stock";
 import { supabase } from "@/lib/supabase";
 import { slugify } from "@/lib/utils";
 
@@ -12,6 +13,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     if (body.title && !body.slug) {
       body.slug = slugify(body.title);
     }
+
+    const stock = parseStockQuantity(body.stock_quantity);
+    if (!stock.ok) return Response.json({ error: stock.error }, { status: 400 });
 
     const { data, error } = await supabase
       .from("products")
@@ -28,6 +32,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         colors: body.colors ?? [],
         sizes: body.sizes ?? [],
         in_stock: body.in_stock ?? true,
+        // Only when sent — an older open admin tab that doesn't know about
+        // this field must not reset a counted product back to 0.
+        ...(stock.value !== undefined ? { stock_quantity: stock.value } : {}),
         // Same as the create route — no fabricated perfect score.
         rating: body.rating ? Number(body.rating) : 0,
         reviews: body.reviews ? Number(body.reviews) : 0,

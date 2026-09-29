@@ -9,6 +9,14 @@
  *  1. one request per photo, so one photo failing can't lose the others;
  *  2. big photos are shrunk in the browser first (also better for page speed:
  *     nobody needs a 6000px original on a product card).
+ *
+ * Those requests used to run one after another. Each one re-checks the
+ * admin session and writes to Supabase Storage, so on a slower connection
+ * a handful of photos could take the better part of a minute end to end —
+ * reported live as "it's taking long and not still uploading". They now
+ * run several at once (DEFAULT_CONCURRENCY), which is what actually cuts
+ * the wait, while every request is still small enough on its own to never
+ * hit the body-size limit above.
  */
 
 export const MAX_DIMENSION = 2000;
@@ -26,6 +34,12 @@ const UPLOAD_URL = "/api/admin/products/upload-image";
  * indefinite spinner that only a page reload got them out of.
  */
 export const DEFAULT_UPLOAD_TIMEOUT_MS = 45_000;
+/**
+ * How many photos to upload at once. High enough to meaningfully shorten
+ * the wait for a typical 3-6 photo batch; not so high that it saturates a
+ * weak connection and makes every individual request slower instead.
+ */
+export const DEFAULT_CONCURRENCY = 3;
 
 /** Scale down to fit within `max` on the long side, keeping aspect ratio. Never scales up. */
 export function fitWithin(width: number, height: number, max: number): { width: number; height: number } {
@@ -83,9 +97,76 @@ type UploadOptions = {
   fetchFn?: typeof fetch;
   onProgress?: (done: number, total: number) => void;
   timeoutMs?: number;
+  concurrency?: number;
 };
 
-/** Upload photos one request each. Never throws: problems come back as `failures`. */
+type SlotResult = { urls: string[] } | { failure: UploadFailure };
+
+async function uploadSlot(
+  original: File,
+  { prepare, doFetch, timeoutMs }: { prepare: (file: File) => Promise<File>; doFetch: typeof fetch; timeoutMs: number }
+): Promise<SlotResult> {
+  const fail = (reason: string): SlotResult => ({ failure: { name: original.name, reason } });
+
+  try {
+    if (!original.type.startsWith("image/")) return fail("Not an image file");
+
+    const file = await prepare(original);
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return fail("Too large to upload even after shrinking — try a smaller photo");
+    }
+
+    const body = new FormData();
+    body.append("files", file);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let res: Response;
+    try {
+      res = await doFetch(UPLOAD_URL, { method: "POST", body, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+
+    // Read as text first: a host-level error (413, 502) isn't JSON.
+    const text = await res.text();
+    let data: { urls?: unknown; error?: unknown } | null = null;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = null;
+    }
+
+    if (!res.ok) {
+      return fail(
+        res.status === 413
+          ? "Photo is too large for the server — try a smaller one"
+          : typeof data?.error === "string"
+            ? data.error
+            : `Upload failed (${res.status})`
+      );
+    }
+
+    const uploaded = Array.isArray(data?.urls)
+      ? data.urls.filter((u): u is string => typeof u === "string")
+      : [];
+    return uploaded.length === 0 ? fail("The server didn't return an image URL") : { urls: uploaded };
+  } catch (err) {
+    return fail(
+      err instanceof DOMException && err.name === "AbortError"
+        ? "Upload timed out — check your connection and try again"
+        : err instanceof Error
+          ? err.message
+          : "Upload failed"
+    );
+  }
+}
+
+/**
+ * Upload photos with several requests in flight at once (see the module
+ * comment above for why). Never throws: problems come back as `failures`.
+ * Results are always returned in the order files were chosen, however they
+ * finished — the first photo is the cover image, so that order matters.
+ */
 export async function uploadProductImages(
   files: File[],
   {
@@ -93,75 +174,33 @@ export async function uploadProductImages(
     fetchFn,
     onProgress,
     timeoutMs = DEFAULT_UPLOAD_TIMEOUT_MS,
+    concurrency = DEFAULT_CONCURRENCY,
   }: UploadOptions = {}
 ): Promise<UploadResult> {
   const doFetch = fetchFn ?? fetch;
-  const urls: string[] = [];
-  const failures: UploadFailure[] = [];
+  const slots: SlotResult[] = new Array(files.length);
+  let nextIndex = 0;
+  let done = 0;
 
   onProgress?.(0, files.length);
 
-  for (let i = 0; i < files.length; i++) {
-    const original = files[i];
-    const fail = (reason: string) => failures.push({ name: original.name, reason });
-
-    try {
-      if (!original.type.startsWith("image/")) {
-        fail("Not an image file");
-      } else {
-        const file = await prepare(original);
-        if (file.size > MAX_UPLOAD_BYTES) {
-          fail("Too large to upload even after shrinking — try a smaller photo");
-        } else {
-          const body = new FormData();
-          body.append("files", file);
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), timeoutMs);
-          let res: Response;
-          try {
-            res = await doFetch(UPLOAD_URL, { method: "POST", body, signal: controller.signal });
-          } finally {
-            clearTimeout(timer);
-          }
-
-          // Read as text first: a host-level error (413, 502) isn't JSON.
-          const text = await res.text();
-          let data: { urls?: unknown; error?: unknown } | null = null;
-          try {
-            data = JSON.parse(text);
-          } catch {
-            data = null;
-          }
-
-          if (!res.ok) {
-            fail(
-              res.status === 413
-                ? "Photo is too large for the server — try a smaller one"
-                : typeof data?.error === "string"
-                  ? data.error
-                  : `Upload failed (${res.status})`
-            );
-          } else {
-            const uploaded = Array.isArray(data?.urls)
-              ? data.urls.filter((u): u is string => typeof u === "string")
-              : [];
-            if (uploaded.length === 0) fail("The server didn't return an image URL");
-            else urls.push(...uploaded);
-          }
-        }
-      }
-    } catch (err) {
-      fail(
-        err instanceof DOMException && err.name === "AbortError"
-          ? "Upload timed out — check your connection and try again"
-          : err instanceof Error
-            ? err.message
-            : "Upload failed"
-      );
+  async function worker() {
+    while (nextIndex < files.length) {
+      const index = nextIndex++;
+      slots[index] = await uploadSlot(files[index], { prepare, doFetch, timeoutMs });
+      done++;
+      onProgress?.(done, files.length);
     }
-
-    onProgress?.(i + 1, files.length);
   }
 
+  const workerCount = Math.max(1, Math.min(concurrency, files.length));
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+
+  const urls: string[] = [];
+  const failures: UploadFailure[] = [];
+  for (const slot of slots) {
+    if ("urls" in slot) urls.push(...slot.urls);
+    else failures.push(slot.failure);
+  }
   return { urls, failures };
 }

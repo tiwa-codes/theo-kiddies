@@ -94,6 +94,76 @@ describe("uploadProductImages — timeout", () => {
   });
 });
 
+describe("uploadProductImages — concurrency", () => {
+  it("has more than one request in flight at once, rather than waiting for each to finish before starting the next", async () => {
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const fn = vi.fn(async (_url: string) => {
+      inFlight++;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await new Promise((r) => setTimeout(r, 5));
+      inFlight--;
+      return new Response(JSON.stringify({ urls: ["https://cdn/x"] }), { status: 201 });
+    }) as unknown as typeof fetch;
+
+    await uploadProductImages([image("a.jpg"), image("b.jpg"), image("c.jpg")], {
+      prepare: identity,
+      fetchFn: fn,
+    });
+    expect(maxInFlight).toBeGreaterThan(1);
+  });
+
+  it("never exceeds the configured concurrency limit", async () => {
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const fn = vi.fn(async (_url: string) => {
+      inFlight++;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await new Promise((r) => setTimeout(r, 5));
+      inFlight--;
+      return new Response(JSON.stringify({ urls: ["https://cdn/x"] }), { status: 201 });
+    }) as unknown as typeof fetch;
+
+    const files = Array.from({ length: 8 }, (_, i) => image(`${i}.jpg`));
+    await uploadProductImages(files, { prepare: identity, fetchFn: fn, concurrency: 2 });
+    expect(maxInFlight).toBeLessThanOrEqual(2);
+  });
+
+  it("still returns results in the order files were chosen, even when later files finish first", async () => {
+    const fn = vi.fn(async (_url: string, init: { body: FormData }) => {
+      const name = (init.body.getAll("files")[0] as File).name;
+      // "a.jpg" is deliberately the slowest, to prove ordering isn't just luck.
+      const delay = name === "a.jpg" ? 30 : name === "b.jpg" ? 15 : 5;
+      await new Promise((r) => setTimeout(r, delay));
+      return new Response(JSON.stringify({ urls: [`https://cdn/${name}`] }), { status: 201 });
+    }) as unknown as typeof fetch;
+
+    const result = await uploadProductImages([image("a.jpg"), image("b.jpg"), image("c.jpg")], {
+      prepare: identity,
+      fetchFn: fn,
+    });
+    expect(result.urls).toEqual(["https://cdn/a.jpg", "https://cdn/b.jpg", "https://cdn/c.jpg"]);
+  });
+
+  it("a slow first photo doesn't block later photos from starting", async () => {
+    const started: string[] = [];
+    const fn = vi.fn(async (_url: string, init: { body: FormData }) => {
+      const name = (init.body.getAll("files")[0] as File).name;
+      started.push(name);
+      const delay = name === "a.jpg" ? 40 : 5;
+      await new Promise((r) => setTimeout(r, delay));
+      return new Response(JSON.stringify({ urls: [`https://cdn/${name}`] }), { status: 201 });
+    }) as unknown as typeof fetch;
+
+    await uploadProductImages([image("a.jpg"), image("b.jpg"), image("c.jpg")], {
+      prepare: identity,
+      fetchFn: fn,
+    });
+    // All three should have started well before the slow one (40ms) finished.
+    expect(started).toEqual(["a.jpg", "b.jpg", "c.jpg"]);
+  });
+});
+
 describe("uploadProductImages", () => {
   it("sends one request per image, so no single request can exceed the host's body limit", async () => {
     const { fn, calls } = fakeFetch((n) => ok(n));

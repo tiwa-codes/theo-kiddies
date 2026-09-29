@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AGE_BANDS, AGE_GROUPS, ageGroupSlug, resolveAgeSlug } from "@/lib/ageGroups";
+import { AGE_BANDS, AGE_GROUPS, ageGroupSlug, parseAgeGroups, resolveAgeSlug } from "@/lib/ageGroups";
 
 describe("AGE_GROUPS", () => {
   it("follows UK kids' sizing: baby months, then one bracket per year to 15-16", () => {
@@ -32,6 +32,31 @@ describe("ageGroupSlug", () => {
   it("makes URL-safe slugs", () => {
     expect(ageGroupSlug("0-3 Months")).toBe("0-3-months");
     expect(ageGroupSlug("15-16 Years")).toBe("15-16-years");
+  });
+});
+
+describe("parseAgeGroups", () => {
+  it("keeps a product's real brackets, in any combination, not just a contiguous range", () => {
+    expect(parseAgeGroups(["6-9 Months", "9-12 Months"])).toEqual(["6-9 Months", "9-12 Months"]);
+    expect(parseAgeGroups(["0-3 Months", "15-16 Years"])).toEqual(["0-3 Months", "15-16 Years"]);
+  });
+
+  it("drops anything that isn't a real bracket rather than rejecting the whole save", () => {
+    expect(parseAgeGroups(["3-4 Years", "Not specified", "made up"])).toEqual(["3-4 Years"]);
+  });
+
+  it("dedupes", () => {
+    expect(parseAgeGroups(["3-4 Years", "3-4 Years"])).toEqual(["3-4 Years"]);
+  });
+
+  it("treats anything that isn't an array as no age tags at all", () => {
+    expect(parseAgeGroups(undefined)).toEqual([]);
+    expect(parseAgeGroups(null)).toEqual([]);
+    expect(parseAgeGroups("3-4 Years")).toEqual([]);
+  });
+
+  it("an empty array means not specified, same as before", () => {
+    expect(parseAgeGroups([])).toEqual([]);
   });
 });
 

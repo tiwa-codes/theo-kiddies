@@ -16,7 +16,7 @@ export default async function AdminDashboard() {
     id: string;
     title: string;
     category: string;
-    age_group: string;
+    age_groups: string[];
     price: number;
     in_stock: boolean;
   }> = [];
@@ -29,7 +29,7 @@ export default async function AdminDashboard() {
       supabase.from("products").select("category, in_stock"),
       supabase
         .from("products")
-        .select("id, title, category, age_group, price, in_stock")
+        .select("id, title, category, age_groups, price, in_stock")
         .order("created_at", { ascending: false })
         .limit(5),
     ]);
@@ -136,7 +136,10 @@ export default async function AdminDashboard() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-gray-900">{p.title}</p>
-                <p className="text-xs text-gray-400">{p.category} · {p.age_group}</p>
+                <p className="text-xs text-gray-400">
+                  {p.category}
+                  {p.age_groups.length ? ` · ${p.age_groups.join(", ")}` : ""}
+                </p>
               </div>
               <div className="w-full text-left sm:w-auto sm:text-right">
                 <p className="text-sm font-semibold text-gray-900">

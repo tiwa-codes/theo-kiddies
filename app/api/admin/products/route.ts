@@ -1,4 +1,5 @@
 import { requireAdmin, adminAuthResponse } from "@/lib/admin-auth";
+import { parseAgeGroups } from "@/lib/ageGroups";
 import { parseStockQuantity } from "@/lib/stock";
 import { supabase } from "@/lib/supabase";
 import { slugify } from "@/lib/utils";
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
         price: Number(body.price),
         compare_at_price: body.compare_at_price ? Number(body.compare_at_price) : null,
         badge: body.badge || null,
-        age_group: String(body.age_group ?? "").trim() || "Not specified",
+        age_groups: parseAgeGroups(body.age_groups),
         category: body.category,
         gender: ["Boys", "Girls", "Unisex"].includes(body.gender) ? body.gender : "Unisex",
         images: body.images ?? [],

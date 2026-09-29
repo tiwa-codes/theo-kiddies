@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, Pencil, Trash2, Search, ExternalLink, X, Loader2, Upload, ChevronLeft, ChevronRight } from "lucide-react";
-import { AGE_GROUPS as AGE_BRACKETS } from "@/lib/ageGroups";
+import { AGE_BANDS } from "@/lib/ageGroups";
 import { uploadProductImages } from "@/lib/imageUpload";
 import { slugify } from "@/lib/utils";
 import type { DbProduct } from "@/lib/supabase";
@@ -15,7 +15,7 @@ type FormState = {
   price: string;
   compare_at_price: string;
   badge: string;
-  age_group: string;
+  age_groups: string[];
   category: string;
   gender: string;
   images: string;      // newline-separated image URLs
@@ -29,11 +29,10 @@ type FormState = {
 
 const EMPTY_FORM: FormState = {
   title: "", slug: "", price: "", compare_at_price: "", badge: "",
-  age_group: "Not specified", category: "Clothing", gender: "Unisex",
+  age_groups: [], category: "Clothing", gender: "Unisex",
   images: "", colors: "", sizes: "", in_stock: true, stock_quantity: "0", published: true, description: "",
 };
 
-const AGE_GROUPS = ["Not specified", ...AGE_BRACKETS];
 const CATEGORIES = ["Clothing", "Shoes", "Toys", "School Supplies", "Baby Essentials", "Accessories"];
 const GENDERS = ["Unisex", "Boys", "Girls"];
 const AGE_OPTIONAL_CATEGORIES = new Set(["Shoes", "Accessories", "School Supplies"]);
@@ -61,7 +60,7 @@ function dbToForm(p: DbProduct): FormState {
     price: String(p.price),
     compare_at_price: p.compare_at_price ? String(p.compare_at_price) : "",
     badge: p.badge ?? "",
-    age_group: p.age_group,
+    age_groups: p.age_groups,
     category: p.category,
     gender: p.gender,
     images: p.images.join("\n"),
@@ -126,6 +125,15 @@ export default function AdminProductsPage() {
   }
 
   // ── Field change ──────────────────────────────────────────────────────────
+  function toggleAgeGroup(age: string) {
+    setForm((prev) => ({
+      ...prev,
+      age_groups: prev.age_groups.includes(age)
+        ? prev.age_groups.filter((a) => a !== age)
+        : [...prev.age_groups, age],
+    }));
+  }
+
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => {
       const next = { ...prev, [key]: value };
@@ -138,9 +146,9 @@ export default function AdminProductsPage() {
       if (key === "stock_quantity" && Number(value) > 0) {
         next.in_stock = true;
       }
-      // For categories where age is usually irrelevant, default to Not specified.
-      if (key === "category" && AGE_OPTIONAL_CATEGORIES.has(String(value)) && next.age_group !== "Not specified") {
-        next.age_group = "Not specified";
+      // For categories where age is usually irrelevant, clear any age tags.
+      if (key === "category" && AGE_OPTIONAL_CATEGORIES.has(String(value)) && next.age_groups.length > 0) {
+        next.age_groups = [];
       }
       return next;
     });
@@ -399,7 +407,7 @@ export default function AdminProductsPage() {
                   </td>
                   <td className="px-5 py-3 text-gray-600">{product.category}</td>
                   <td className="px-5 py-3 text-gray-600">{product.gender}</td>
-                  <td className="px-5 py-3 text-gray-600">{product.age_group === "Not specified" ? "-" : product.age_group}</td>
+                  <td className="px-5 py-3 text-gray-600">{product.age_groups.length ? product.age_groups.join(", ") : "-"}</td>
                   <td className="px-5 py-3 font-semibold text-gray-900">
                     ₦{Number(product.price).toLocaleString("en-NG")}
                     {product.compare_at_price && (
@@ -476,23 +484,43 @@ export default function AdminProductsPage() {
                   </div>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Age group <span className="text-gray-400 font-normal">(optional)</span></label>
-                    <select value={form.age_group} onChange={(e) => setField("age_group", e.target.value)} className={inputCls}>
-                      {AGE_GROUPS.map((a) => <option key={a}>{a}</option>)}
-                    </select>
-                    <p className="mt-1 text-xs text-gray-400">
-                      {AGE_OPTIONAL_CATEGORIES.has(form.category)
-                        ? "This category usually does not need age tagging."
-                        : "Choose Not specified if age does not apply."}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Category <span className="text-red-500">*</span></label>
-                    <select required value={form.category} onChange={(e) => setField("category", e.target.value)} className={inputCls}>
-                      {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-                    </select>
+                <div>
+                  <label className="mb-1 block text-sm font-semibold text-gray-700">Category <span className="text-red-500">*</span></label>
+                  <select required value={form.category} onChange={(e) => setField("category", e.target.value)} className={inputCls}>
+                    {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-semibold text-gray-700">
+                    Age groups <span className="text-gray-400 font-normal">(optional — pick as many as fit)</span>
+                  </label>
+                  <p className="mt-1 text-xs text-gray-400">
+                    {AGE_OPTIONAL_CATEGORIES.has(form.category)
+                      ? "This category usually does not need age tagging."
+                      : "Leave all unticked if age does not apply."}
+                  </p>
+                  <div className="mt-2 space-y-3 rounded-xl border border-gray-200 p-3">
+                    {AGE_BANDS.map((band) => (
+                      <div key={band.slug}>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                          {band.title} <span className="normal-case text-gray-300">({band.range})</span>
+                        </p>
+                        <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1.5">
+                          {band.ages.map((age) => (
+                            <label key={age} className="flex cursor-pointer items-center gap-1.5 text-sm text-gray-700">
+                              <input
+                                type="checkbox"
+                                checked={form.age_groups.includes(age)}
+                                onChange={() => toggleAgeGroup(age)}
+                                className="h-3.5 w-3.5 rounded accent-brand-orange"
+                              />
+                              {age}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 

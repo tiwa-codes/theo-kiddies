@@ -10,7 +10,7 @@ export type Product = {
   price: number;
   compareAtPrice?: number;
   badge?: string;
-  ageGroup: string;
+  ageGroups: string[];
   category: string;
   gender: "Boys" | "Girls" | "Unisex";
   images: string[];

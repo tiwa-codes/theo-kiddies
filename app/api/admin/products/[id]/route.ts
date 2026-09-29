@@ -1,4 +1,5 @@
 import { requireAdmin, adminAuthResponse } from "@/lib/admin-auth";
+import { parseAgeGroups } from "@/lib/ageGroups";
 import { parseStockQuantity } from "@/lib/stock";
 import { supabase } from "@/lib/supabase";
 import { slugify } from "@/lib/utils";
@@ -25,7 +26,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         price: Number(body.price),
         compare_at_price: body.compare_at_price ? Number(body.compare_at_price) : null,
         badge: body.badge || null,
-        age_group: String(body.age_group ?? "").trim() || "Not specified",
+        // Only when sent — same reasoning as stock_quantity below: an
+        // older open admin tab that doesn't know about this field must
+        // not silently wipe a product's age tags on save.
+        ...(Array.isArray(body.age_groups) ? { age_groups: parseAgeGroups(body.age_groups) } : {}),
         category: body.category,
         gender: ["Boys", "Girls", "Unisex"].includes(body.gender) ? body.gender : "Unisex",
         images: body.images ?? [],

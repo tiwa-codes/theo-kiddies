@@ -57,7 +57,7 @@ export type DbProduct = {
   price: number;
   compare_at_price: number | null;
   badge: string | null;
-  age_group: string;
+  age_groups: string[];
   category: string;
   gender: "Boys" | "Girls" | "Unisex";
   images: string[];
@@ -82,7 +82,7 @@ export function dbProductToProduct(row: DbProduct): Product {
     price: row.price,
     compareAtPrice: row.compare_at_price ?? undefined,
     badge: row.badge ?? undefined,
-    ageGroup: row.age_group,
+    ageGroups: row.age_groups,
     category: row.category,
     gender: row.gender,
     images: row.images,

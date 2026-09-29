@@ -209,3 +209,25 @@ alter table products
     check (gender in ('Boys', 'Girls', 'Unisex'));
 
 create index if not exists products_gender_idx on products (gender);
+
+-- ============================================================
+-- Multiple age groups per product
+-- ============================================================
+-- A product can now belong to several age brackets (e.g. a onesie that
+-- fits 6-9 Months AND 9-12 Months), not just one. age_groups replaces the
+-- old single age_group column: an empty array means "not specified" (no
+-- age tagging), same meaning "Not specified" had before. One-time
+-- migration — not safe to replay after age_group is dropped below, same
+-- as the rest of this file's phase-by-phase history.
+alter table products add column if not exists age_groups text[] not null default '{}';
+
+update products
+set age_groups = case
+  when age_group is null or age_group = 'Not specified' then '{}'::text[]
+  else array[age_group]
+end
+where age_groups = '{}';
+
+alter table products drop column if exists age_group;
+
+create index if not exists products_age_groups_idx on products using gin (age_groups);

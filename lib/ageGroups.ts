@@ -51,3 +51,15 @@ export function resolveAgeSlug(slug: string): { title: string; ages: readonly st
   const label = AGE_GROUPS.find((a) => ageGroupSlug(a) === slug);
   return label ? { title: label, ages: [label] } : null;
 }
+
+/**
+ * Narrow an admin request body's age_groups to only real brackets, deduped.
+ * Not an error to send something invalid — a stale client sending an old
+ * label is just dropped, the same way gender falls back to Unisex rather
+ * than rejecting the whole save.
+ */
+export function parseAgeGroups(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const valid = new Set(AGE_GROUPS as readonly string[]);
+  return Array.from(new Set(raw.filter((a): a is string => typeof a === "string" && valid.has(a))));
+}

@@ -19,14 +19,15 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const product = await getProductBySlug(params.slug);
   if (!product) return { title: "Product" };
-  const hasSpecificAge = !!product.ageGroup && product.ageGroup !== "Not specified";
-  const agePhrase = hasSpecificAge ? ` for ${product.ageGroup}` : "";
+  const hasSpecificAge = product.ageGroups.length > 0;
+  const ageLabel = product.ageGroups.join(", ");
+  const agePhrase = hasSpecificAge ? ` for ${ageLabel}` : "";
   return {
     title: product.title,
     description: `Buy ${product.title}${agePhrase} – ${product.category} from Theo Kiddies. Premium kids essentials with nationwide delivery.`,
     openGraph: {
       title: `${product.title} | Theo Kiddies`,
-      description: `Buy ${product.title} – ${product.category}${hasSpecificAge ? ` for ${product.ageGroup}` : ""} kids.`,
+      description: `Buy ${product.title} – ${product.category}${hasSpecificAge ? ` for ${ageLabel}` : ""} kids.`,
       images: product.images[0] ? [{ url: product.images[0] }] : [],
     },
   };

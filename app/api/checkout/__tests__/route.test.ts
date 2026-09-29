@@ -44,7 +44,7 @@ vi.mock("@/lib/products", () => ({
       slug,
       title: "School Shirt",
       price: 5000,
-      ageGroup: "4-5 Years",
+      ageGroups: ["4-5 Years"],
       category: "Clothing",
       gender: "Unisex",
       images: [],

@@ -13,7 +13,7 @@ function product(overrides: Partial<Product> = {}): Product {
     slug: "school-shirt",
     title: "School Shirt",
     price: 4500,
-    ageGroup: "4-5 Years",
+    ageGroups: ["4-5 Years"],
     category: "Clothing",
     gender: "Unisex",
     images: [],

@@ -185,7 +185,11 @@ export async function queryProducts(filters: ProductFilters = {}): Promise<Produ
     if (filters.category) query = query.eq("category", filters.category);
     if (filters.badge) query = query.eq("badge", filters.badge);
     if (filters.onSale) query = query.not("compare_at_price", "is", null);
-    if (filters.ages) query = query.in("age_group", filters.ages);
+    // A product can carry several age brackets — "does its age_groups
+    // array intersect the selected ones" (Postgres &&), not equality.
+    // An empty filters.ages still correctly matches nothing: the empty
+    // set overlaps nothing.
+    if (filters.ages) query = query.overlaps("age_groups", filters.ages);
     if (filters.genders) query = query.in("gender", filters.genders);
     if (filters.inStockOnly) query = query.eq("in_stock", true);
 

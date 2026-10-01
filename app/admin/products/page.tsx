@@ -506,14 +506,17 @@ export default function AdminProductsPage() {
                         <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
                           {band.title} <span className="normal-case text-gray-300">({band.range})</span>
                         </p>
-                        <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1.5">
+                        <div className="mt-1.5 flex flex-wrap gap-1">
                           {band.ages.map((age) => (
-                            <label key={age} className="flex cursor-pointer items-center gap-1.5 text-sm text-gray-700">
+                            <label
+                              key={age}
+                              className="flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg px-2 text-sm text-gray-700 active:bg-gray-100"
+                            >
                               <input
                                 type="checkbox"
                                 checked={form.age_groups.includes(age)}
                                 onChange={() => toggleAgeGroup(age)}
-                                className="h-3.5 w-3.5 rounded accent-brand-orange"
+                                className="h-5 w-5 flex-shrink-0 rounded accent-brand-orange"
                               />
                               {age}
                             </label>

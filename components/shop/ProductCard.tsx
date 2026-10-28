@@ -3,15 +3,17 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, Plus, Check } from "lucide-react";
+import { Heart, Plus, Check, ChevronRight } from "lucide-react";
 import type { Product } from "@/types";
 import { useCartStore } from "@/store/cart";
 import { useWishlistStore } from "@/store/wishlist";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { buttonClassName } from "@/components/ui/buttonStyles";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/currency";
+import { quickAddChoice } from "@/lib/quickAdd";
 
 export function ProductCard({ product }: { product: Product }) {
   const hasSale = product.compareAtPrice && product.compareAtPrice > product.price;
@@ -19,16 +21,18 @@ export function ProductCard({ product }: { product: Product }) {
   const { toggle, has } = useWishlistStore();
   const isSaved = has(product.id);
   const [justAdded, setJustAdded] = useState(false);
+  const choice = quickAddChoice(product);
 
   function handleQuickAdd() {
+    if (choice.kind !== "add") return;
     addItem({
-      id: `${product.id}-${product.colors[0]?.id ?? "default"}-${product.sizes[0]?.id ?? "default"}`,
+      id: `${product.id}-${choice.colorId ?? "default"}-${choice.sizeId ?? "default"}`,
       slug: product.slug,
       title: product.title,
       price: product.price,
       image: product.images[0],
-      color: product.colors[0]?.id,
-      size: product.sizes[0]?.id,
+      color: choice.colorId,
+      size: choice.sizeId,
     });
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1800);
@@ -80,26 +84,39 @@ export function ProductCard({ product }: { product: Product }) {
             </span>
           )}
         </div>
-        <Button
-          variant={justAdded ? "primary" : "secondary"}
-          className={cn(
-            "w-full justify-between transition-all duration-300",
-            justAdded && "scale-[0.97]"
-          )}
-          onClick={handleQuickAdd}
-        >
-          {justAdded ? (
-            <>
-              Added!
-              <Check className="h-4 w-4" />
-            </>
-          ) : (
-            <>
-              Quick add
-              <Plus className="h-4 w-4" />
-            </>
-          )}
-        </Button>
+        {choice.kind === "choose" ? (
+          <Link
+            href={`/product/${product.slug}`}
+            className={buttonClassName({ variant: "secondary", className: "w-full justify-between" })}
+          >
+            Choose options
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        ) : (
+          <Button
+            variant={justAdded ? "primary" : "secondary"}
+            className={cn(
+              "w-full justify-between transition-all duration-300",
+              justAdded && "scale-[0.97]"
+            )}
+            onClick={handleQuickAdd}
+            disabled={choice.kind === "unavailable"}
+          >
+            {choice.kind === "unavailable" ? (
+              "Out of stock"
+            ) : justAdded ? (
+              <>
+                Added!
+                <Check className="h-4 w-4" />
+              </>
+            ) : (
+              <>
+                Quick add
+                <Plus className="h-4 w-4" />
+              </>
+            )}
+          </Button>
+        )}
       </div>
     </Card>
   );

@@ -47,13 +47,14 @@ export const NIGERIAN_STATES = Object.freeze([
 export type NigerianState = (typeof NIGERIAN_STATES)[number];
 
 /**
- * Validates a Nigerian mobile number in local (0803...), international
- * (+234803...) or bare international (234803...) format. Normalises to the
- * 10-digit subscriber number before checking it starts with a valid mobile
- * prefix digit (7, 8 or 9 — every NG mobile network's prefixes start this way).
+ * Normalises a Nigerian mobile number in local (0803...), international
+ * (+234803...) or bare international (234803...) format — spaces and dashes
+ * allowed — to the 234XXXXXXXXXX form WhatsApp links need. Returns null unless
+ * the 10-digit subscriber number starts with a valid mobile prefix digit
+ * (7, 8 or 9 — every NG mobile network's prefixes start this way).
  */
-export function isValidNigerianPhone(value: unknown): boolean {
-  if (typeof value !== "string") return false;
+export function toWhatsAppNumber(value: unknown): string | null {
+  if (typeof value !== "string") return null;
 
   const digits = value.trim().replace(/[\s-]/g, "");
 
@@ -65,8 +66,13 @@ export function isValidNigerianPhone(value: unknown): boolean {
   } else if (/^0\d{10}$/.test(digits)) {
     subscriber = digits.slice(1);
   } else {
-    return false;
+    return null;
   }
 
-  return /^[789]\d{9}$/.test(subscriber);
+  return /^[789]\d{9}$/.test(subscriber) ? `234${subscriber}` : null;
+}
+
+/** True for any number toWhatsAppNumber can normalise. */
+export function isValidNigerianPhone(value: unknown): boolean {
+  return toWhatsAppNumber(value) !== null;
 }

@@ -40,3 +40,8 @@ export const HOME_HERO_KEYS = {
   image: HERO_IMAGE_KEY,
   alt: HERO_ALT_KEY,
 };
+
+/** Raw key/value rows from site_content for the given keys. */
+export async function readSiteContent(keys: string[]) {
+  return supabase.from("site_content").select("key, value").in("key", keys);
+}

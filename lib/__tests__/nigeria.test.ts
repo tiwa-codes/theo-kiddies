@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NIGERIAN_STATES, isValidNigerianPhone } from "@/lib/nigeria";
+import { NIGERIAN_STATES, isValidNigerianPhone, toWhatsAppNumber } from "@/lib/nigeria";
 
 describe("NIGERIAN_STATES", () => {
   it("has 37 entries: 36 states plus FCT", () => {
@@ -58,5 +58,20 @@ describe("isValidNigerianPhone", () => {
     expect(isValidNigerianPhone("")).toBe(false);
     // @ts-expect-error - deliberately wrong type, mirrors untrusted request bodies
     expect(isValidNigerianPhone(undefined)).toBe(false);
+  });
+});
+
+describe("toWhatsAppNumber", () => {
+  it("converts every accepted format to 234 followed by the 10-digit number", () => {
+    for (const input of ["08140688891", "+2348140688891", "2348140688891", "+234 814 068 8891", "0814-068-8891"]) {
+      expect(toWhatsAppNumber(input)).toBe("2348140688891");
+    }
+  });
+
+  it("returns null for numbers isValidNigerianPhone rejects", () => {
+    for (const input of ["", "080312345", "080312345678", "0803abc4567", "+447911123456", "15551234567"]) {
+      expect(toWhatsAppNumber(input)).toBeNull();
+    }
+    expect(toWhatsAppNumber(undefined)).toBeNull(); // untrusted request bodies
   });
 });

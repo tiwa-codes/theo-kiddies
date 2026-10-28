@@ -262,3 +262,42 @@ describe("POST /api/webhooks/paystack — stock decrement on payment (4.5)", () 
     expect(updatePatches).toHaveLength(0);
   });
 });
+
+describe("POST /api/webhooks/paystack — refuses to run without a secret", () => {
+  beforeEach(() => {
+    delete process.env.PAYSTACK_SECRET_KEY;
+    orderRow.current = pendingOrder();
+    updatePatches.length = 0;
+    rpcCalls.length = 0;
+    emailCalls.length = 0;
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    process.env.PAYSTACK_SECRET_KEY = SECRET;
+    vi.restoreAllMocks();
+    vi.resetModules();
+  });
+
+  it("rejects a request signed with an empty key instead of marking the order paid", async () => {
+    // With no secret configured, an HMAC keyed on "" is something anyone can
+    // compute, so a forged charge.success would otherwise pass verification.
+    const rawBody = JSON.stringify(chargeSuccessPayload());
+    const forged = crypto.createHmac("sha512", "").update(rawBody).digest("hex");
+
+    const { POST } = await import("@/app/api/webhooks/paystack/route");
+    const res = await POST(
+      new Request("http://localhost/api/webhooks/paystack", {
+        method: "POST",
+        headers: { "x-paystack-signature": forged },
+        body: rawBody,
+      })
+    );
+
+    expect(res.status).toBe(500);
+    expect(orderRow.current?.status).toBe("pending");
+    expect(updatePatches).toHaveLength(0);
+    expect(rpcCalls).toHaveLength(0);
+    expect(emailCalls).toHaveLength(0);
+  });
+});

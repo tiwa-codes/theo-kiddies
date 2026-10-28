@@ -8,6 +8,15 @@ const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY ?? "";
 // Paystack Dashboard → Settings → API Keys & Webhooks → Webhook URL
 // → https://your-domain.com/api/webhooks/paystack
 export async function POST(req: Request) {
+  // Without a secret the HMAC below would be keyed on "", which anyone can
+  // compute, so a forged charge.success would pass verification and mark an
+  // unpaid order paid. Refuse instead. A non-200 also makes Paystack retry
+  // the delivery once the key is configured.
+  if (!PAYSTACK_SECRET) {
+    console.error("Paystack webhook rejected: PAYSTACK_SECRET_KEY is not set");
+    return Response.json({ error: "Webhook not configured" }, { status: 500 });
+  }
+
   try {
     const rawBody = await req.text();
     const signature = req.headers.get("x-paystack-signature") ?? "";

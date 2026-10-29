@@ -22,7 +22,7 @@ export const siteConfig = {
   whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "2348000000000",
 
   // ── Social ───────────────────────────────────────────────────────────────
-  instagram: process.env.NEXT_PUBLIC_INSTAGRAM_URL ?? "https://instagram.com/theokiddies",
-  facebook: process.env.NEXT_PUBLIC_FACEBOOK_URL ?? "https://facebook.com/theokiddies",
-  twitter: process.env.NEXT_PUBLIC_TWITTER_URL ?? "https://twitter.com/theokiddies",
+  instagram: process.env.NEXT_PUBLIC_INSTAGRAM_URL ?? "https://www.instagram.com/theokiddies",
+  facebook: process.env.NEXT_PUBLIC_FACEBOOK_URL ?? "https://www.facebook.com/theokiddies",
+  tiktok: process.env.NEXT_PUBLIC_TIKTOK_URL ?? "https://www.tiktok.com/@theokiddies",
 };

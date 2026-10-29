@@ -1,5 +1,6 @@
 import { supabase, escapeLikePattern } from "@/lib/supabase";
 import { createRateLimiter } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/request";
 
 export const dynamic = "force-dynamic";
 
@@ -9,12 +10,6 @@ const limiter = createRateLimiter({ limit: 10, windowMs: 15 * 60 * 1000 });
 
 function isValidEmail(value: unknown): value is string {
   return typeof value === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
-}
-
-function getClientIp(req: Request): string {
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return "unknown";
 }
 
 export async function POST(req: Request) {

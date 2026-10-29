@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { Facebook, Instagram, Twitter } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
-import { Input } from "@/components/ui/Input";
+import { SocialIcon } from "@/components/ui/SocialIcon";
+import { NewsletterSignup } from "@/components/shop/NewsletterSignup";
 import { siteConfig } from "@/lib/config";
+import { socialLinks } from "@/lib/socials";
 
 const quickLinks = [
   { label: "New Arrivals", href: "/category/new-arrivals" },
@@ -42,15 +42,18 @@ export function Footer() {
               <p>{siteConfig.hours}</p>
             </div>
             <div className="mt-4 flex items-center gap-3">
-              <Link href={siteConfig.instagram} target="_blank" rel="noreferrer" className="rounded-full bg-brand-cream p-2">
-                <Instagram className="h-4 w-4" />
-              </Link>
-              <Link href={siteConfig.facebook} target="_blank" rel="noreferrer" className="rounded-full bg-brand-cream p-2">
-                <Facebook className="h-4 w-4" />
-              </Link>
-              <Link href={siteConfig.twitter} target="_blank" rel="noreferrer" className="rounded-full bg-brand-cream p-2">
-                <Twitter className="h-4 w-4" />
-              </Link>
+              {socialLinks.map(({ name, href }) => (
+                <a
+                  key={name}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Theo Kiddies on ${name}`}
+                  className="rounded-full bg-brand-cream p-2 text-brand-cocoa transition hover:bg-brand-orange hover:text-white"
+                >
+                  <SocialIcon name={name} className="h-4 w-4" />
+                </a>
+              ))}
             </div>
           </div>
 
@@ -107,10 +110,7 @@ export function Footer() {
               Get early access to new drops, deals, and school-season essentials.
             </p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Input placeholder="Enter your email" type="email" />
-            <Button className="sm:w-auto">Subscribe</Button>
-          </div>
+          <NewsletterSignup source="footer" />
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-brand-orange/10 pt-6 text-xs text-brand-cocoa/60">

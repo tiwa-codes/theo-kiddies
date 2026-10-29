@@ -13,6 +13,8 @@ const config: Config = {
           orange: "#D5662E",
           cream: "#FFF7EF",
           cocoa: "#5B3A2A",
+          // The gold of the printed thank-you card's "For your order".
+          gold: "#C9A24A",
         },
         accent: {
           mint: "#D7EEE3",

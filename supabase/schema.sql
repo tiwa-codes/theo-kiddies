@@ -231,3 +231,23 @@ where age_groups = '{}';
 alter table products drop column if exists age_group;
 
 create index if not exists products_age_groups_idx on products using gin (age_groups);
+
+-- ============================================================
+-- Newsletter subscribers
+-- ============================================================
+-- Signups from the newsletter box on /feedback and in the footer. Checkout
+-- opt-ins stay on the order (orders.newsletter_opt_in); the admin list at
+-- /admin/subscribers merges both. Emails are stored lowercased. RLS with no
+-- policies: only the service role (the server) can read or write.
+create table if not exists newsletter_subscribers (
+  id            uuid primary key default gen_random_uuid(),
+  email         text unique not null,
+  source        text not null check (source in ('feedback', 'footer')),
+  consented_at  timestamptz not null default now(),
+  created_at    timestamptz not null default now()
+);
+
+create index if not exists newsletter_subscribers_created_at_idx
+  on newsletter_subscribers (created_at desc);
+
+alter table newsletter_subscribers enable row level security;

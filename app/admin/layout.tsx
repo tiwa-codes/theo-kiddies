@@ -9,6 +9,7 @@ import {
   Package,
   ShoppingBag,
   Users,
+  Mail,
   Settings,
   Truck,
   ExternalLink,
@@ -22,6 +23,7 @@ const navItems = [
   { label: "Orders", href: "/admin/orders", icon: ShoppingBag },
   { label: "Delivery", href: "/admin/delivery", icon: Truck },
   { label: "Customers", href: "/admin/customers", icon: Users },
+  { label: "Subscribers", href: "/admin/subscribers", icon: Mail },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
